@@ -1,0 +1,16 @@
+[
+  {
+    "id": "v1.1.0",
+    "videoTitle": "v1.1.0 walkthrough",
+    "videoLinks": [
+      {
+        "title": "Bilibili",
+        "url": "https://www.bilibili.com/video/xxx"
+      },
+      {
+        "title": "Release article",
+        "url": "https://example.com/releases/1.1.0"
+      }
+    ]
+  }
+]

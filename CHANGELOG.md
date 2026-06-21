@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Relaxed the `intl` dependency constraint to support `>=0.19.0 <0.21.0`.
+- Updated deprecated color opacity calls for newer Flutter SDKs.
+
 ## 0.2.0
 
 - Added unified feedback configuration through `AppHelpCenterConfig.feedback`.

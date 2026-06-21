@@ -26,7 +26,7 @@ pure Flutter/Dart UI and models.
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.0
+  app_help_center: ^0.2.1
 ```
 
 ## Basic Usage

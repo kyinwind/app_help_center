@@ -33,7 +33,8 @@ class ReviewPromptConfig {
   final VoidCallback? onOpenSettings;
 
   /// Custom callback when the user taps "Go to Review".
-  /// If null, the platform's in-app review dialog is used.
+  /// Use this to open your store listing, in-app review flow, or rating page.
+  /// If null, the button only dismisses the prompt and silences future prompts.
   final VoidCallback? onReview;
 
   /// SharedPreferences key prefix for persisting prompt state.
@@ -153,7 +154,7 @@ class ReviewPromptManager extends ChangeNotifier {
   bool get shouldShowPrompt => _info?.isShowReviewPopup == true;
 
   /// Whether the user has permanently opted out.
-  bool get neverPrompt => _info?.neverPrompt == true;
+  bool get isNeverPrompt => _info?.neverPrompt == true;
 
   Future<SharedPreferences> get _prefs async =>
       _preferences ??= await SharedPreferences.getInstance();
@@ -163,7 +164,7 @@ class ReviewPromptManager extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   void _initInfo() {
-    _info = const _ReviewPromptInfo(
+    _info = _ReviewPromptInfo(
       maxClickCount: config.defaultClickThreshold,
       maxDaysCount: config.defaultDaysThreshold,
     );
@@ -218,10 +219,12 @@ class ReviewPromptManager extends ChangeNotifier {
 
     if (!_info!.isShowReviewPopup) {
       // Record this action
-      _history.add(_ClickMenuHistory(actType: actType, clickDate: DateTime.now()));
+      _history
+          .add(_ClickMenuHistory(actType: actType, clickDate: DateTime.now()));
       _saveHistory();
 
-      if (daysCount >= _info!.maxDaysCount && _history.length > _info!.maxClickCount) {
+      if (daysCount >= _info!.maxDaysCount &&
+          _history.length > _info!.maxClickCount) {
         _info = _info!.copyWith(
           isShowReviewPopup: true,
           lastPromptDate: DateTime.now(),
@@ -254,7 +257,7 @@ class ReviewPromptManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// User chose "Never prompt again" (不再提醒).
+  /// User chose "Never prompt again".
   ///
   /// Permanently suppresses the review prompt.
   /// Mirrors SwiftHelpCenter's `neverPrompt()`.
@@ -275,7 +278,7 @@ class ReviewPromptManager extends ChangeNotifier {
     final prefs = await _prefs;
     await prefs.remove('${config.storageKey}.info');
     await prefs.remove('${config.storageKey}.history');
-    _info = const _ReviewPromptInfo(
+    _info = _ReviewPromptInfo(
       maxClickCount: config.defaultClickThreshold,
       maxDaysCount: config.defaultDaysThreshold,
     );
@@ -293,7 +296,8 @@ class ReviewPromptManager extends ChangeNotifier {
         .map((h) => h.clickDate)
         .reduce((a, b) => a.isBefore(b) ? a : b);
     final now = DateTime.now();
-    final startOfEarliest = DateTime(earliest.year, earliest.month, earliest.day);
+    final startOfEarliest =
+        DateTime(earliest.year, earliest.month, earliest.day);
     final startOfToday = DateTime(now.year, now.month, now.day);
     return startOfToday.difference(startOfEarliest).inDays;
   }

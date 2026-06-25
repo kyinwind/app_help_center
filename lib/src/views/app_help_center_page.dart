@@ -6,7 +6,6 @@ import '../app_help_center_controller.dart';
 import '../l10n/app_help_center_localizations.dart';
 import '../models/help_announcement.dart';
 import '../models/help_quick_link.dart';
-import '../models/review_prompt.dart';
 import '../models/version_history_item.dart';
 import 'help_feedback_page.dart';
 import 'review_prompt_dialog.dart';
@@ -57,7 +56,9 @@ class _AppHelpCenterPageState extends State<AppHelpCenterPage> {
     final manager = _controller.reviewPromptManager;
     if (manager != null) {
       manager.removeListener(_handleReviewPromptChange);
-      manager.dispose();
+      if (_ownsController) {
+        manager.dispose();
+      }
     }
     if (_ownsController) {
       _controller.dispose();
@@ -549,6 +550,7 @@ class _QuickLinkCard extends StatelessWidget {
         onTap: () {
           if (link.actionType == HelpQuickLinkActionType.feedback &&
               controller.hasFeedback) {
+            controller.checkReviewPrompt('feedback');
             onOpenFeedback();
             return;
           }
@@ -647,7 +649,9 @@ class _VersionHistorySection extends StatelessWidget {
   }
 
   List<VersionHistoryItem> _visibleItems(List<VersionHistoryItem> items) {
-    if (showAll || items.length == 1) {
+    if (showAll ||
+        items.length == 1 ||
+        !controller.config.showOnlyLatestVersionByDefault) {
       return items;
     }
     final unread = items.where(controller.isVersionUnread).toList();

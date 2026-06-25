@@ -44,9 +44,9 @@ final config = AppHelpCenterConfig(
   feedback: HelpFeedbackConfig(
     email: 'feedback@example.com',
     webFormUrl: Uri.parse('https://example.com/feedback'),
-    discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/…'),
+    discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/...'),
     dingTalkWebhookUrl:
-        Uri.parse('https://oapi.dingtalk.com/robot/send?access_token=…'),
+        Uri.parse('https://oapi.dingtalk.com/robot/send?access_token=...'),
     allowScreenshots: true,
     submitHandler: (payload) async {
       // Send to your own backend.
@@ -93,7 +93,7 @@ class HelpScreen extends StatelessWidget {
 ## Help Center Button with Unread Badge
 
 Use `AppHelpCenterController` to drive a help center button. The controller is
-a `ChangeNotifier` — listen to it to show a badge when there are unread
+a `ChangeNotifier`; listen to it to show a badge when there are unread
 announcements or new version entries.
 
 ```dart
@@ -159,6 +159,7 @@ class _HelpCenterButtonState extends State<HelpCenterButton> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => AppHelpCenterPage(
+                config: widget.controller.config,
                 controller: widget.controller,
               ),
             ),
@@ -283,11 +284,14 @@ be met before the dialog appears.
 AppHelpCenterConfig(
   appName: 'Demo App',
   reviewPrompt: ReviewPromptConfig(
-    appleID: '1234567890',
+    appName: 'Demo App',
     defaultClickThreshold: 5,
     defaultDaysThreshold: 3,
     onOpenSettings: () {
       // Navigate to your app's settings page.
+    },
+    onReview: () {
+      // Open your store listing, in-app review flow, or rating page.
     },
   ),
 );
@@ -297,7 +301,7 @@ The dialog has four buttons:
 
 | Button | Behavior |
 |--------|----------|
-| **Rate Now** | Opens the system rating dialog (`SKStoreReviewController` on iOS, Play Store on Android). |
+| **Rate Now** | Calls `onReview` so you can open your store listing, in-app review flow, or rating page. |
 | **Later** | Postpones the prompt by raising both thresholds (+30 clicks, +3 days). |
 | **Settings** | Calls the `onOpenSettings` callback so you can open your app's settings. |
 | **Never** | Silences the prompt permanently. |

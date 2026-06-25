@@ -38,8 +38,8 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
   var _selectedChannels = <HelpFeedbackChannel>{};
   var _includeSystemInfo = true;
   var _isSubmitting = false;
-  var _attachments = <Uint8List>[];
-  var _attachmentFilenames = <String>[];
+  final _attachments = <Uint8List>[];
+  final _attachmentFilenames = <String>[];
   final _imagePicker = ImagePicker();
 
   HelpFeedbackConfig get _feedback => widget.config.feedback!;
@@ -91,7 +91,10 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
                       maxLines: 12,
                       textInputAction: TextInputAction.newline,
                       maxLength: 1700,
-                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+                      buildCounter: (context,
+                          {required currentLength,
+                          required isFocused,
+                          maxLength}) {
                         return Text(
                           l10n.format('feedbackCharCount', currentLength),
                           style: Theme.of(context).textTheme.bodySmall,
@@ -150,7 +153,8 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
                     const SizedBox(height: 12),
                     // Screenshot picker (only when Discord is selected and allowed)
                     if (_feedback.allowScreenshots &&
-                        _selectedChannels.contains(HelpFeedbackChannel.discordWebhook))
+                        _selectedChannels
+                            .contains(HelpFeedbackChannel.discordWebhook))
                       _ScreenshotPicker(
                         attachments: _attachments,
                         attachmentFilenames: _attachmentFilenames,
@@ -316,7 +320,8 @@ class _FeedbackHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.text('feedbackTitle'), style: theme.textTheme.titleLarge),
+              Text(l10n.text('feedbackTitle'),
+                  style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
                 l10n.text('feedbackFollowUp'),
@@ -340,17 +345,17 @@ class _FeedbackActions extends StatelessWidget {
   const _FeedbackActions({
     required this.config,
     required this.l10n,
-    this.linkLauncher = const HelpLinkLauncher(),
   });
 
   final AppHelpCenterConfig config;
   final AppHelpCenterLocalizations l10n;
-  final HelpLinkLauncher linkLauncher;
+  final HelpLinkLauncher linkLauncher = const HelpLinkLauncher();
 
   @override
   Widget build(BuildContext context) {
     final hasRating = config.ratingUrl != null || config.onOpenRating != null;
-    final hasSupport = config.supportUrl != null || config.onOpenSupport != null;
+    final hasSupport =
+        config.supportUrl != null || config.onOpenSupport != null;
 
     if (!hasRating && !hasSupport) {
       return const SizedBox.shrink();
@@ -464,7 +469,8 @@ class _ScreenshotPicker extends StatelessWidget {
                         height: 70,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: theme.colorScheme.outlineVariant),
+                          border: Border.all(
+                              color: theme.colorScheme.outlineVariant),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Image.memory(

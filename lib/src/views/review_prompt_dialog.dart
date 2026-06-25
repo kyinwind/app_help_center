@@ -59,7 +59,7 @@ class _ReviewPromptDialog extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.star_bubble,
+                  Icons.star,
                   size: 34,
                   color: theme.colorScheme.primary,
                 ),
@@ -138,9 +138,6 @@ class _ReviewPromptDialog extends StatelessWidget {
                           final callback = manager.config.onReview;
                           if (callback != null) {
                             callback();
-                          } else {
-                            // Default: use InAppReview (caller should handle this)
-                            // via controller.openRating()
                           }
                           // Mark as reviewed after user taps review
                           manager.neverPrompt();

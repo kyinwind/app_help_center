@@ -2,7 +2,7 @@
 
 - Added review prompt manager with dual click/day thresholds, four-button dialog (Rate Now / Later / Settings / Never), and persistent silent state via `AppHelpCenterConfig.reviewPrompt`.
 - Added Discord webhook multipart image upload support in feedback service (`payload_json` + `files[]`).
-- Added screenshot picker on the feedback page — tap to add, horizontal thumbnail preview, remove button, up to 5 images via `image_picker`.
+- Added screenshot picker on the feedback page: tap to add, horizontal thumbnail preview, remove button, up to 5 images via `image_picker`.
 - Added rate and tech support action buttons on the feedback page (mirrors SwiftHelpCenter `FeedbackView.feedbackActions`).
 - Added character count display (1700-character limit) below the feedback text field.
 - Added `image_picker` and `http_parser` dependencies.

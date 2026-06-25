@@ -4,6 +4,7 @@ import 'package:app_help_center/app_help_center.dart';
 import 'package:app_help_center/src/services/announcement_service.dart';
 import 'package:app_help_center/src/services/feedback_service.dart';
 import 'package:app_help_center/src/services/version_supplement_service.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,11 +14,11 @@ void main() {
 [
   {
     "id": "welcome-help-center",
-    "title": "欢迎使用帮助中心",
-    "message": "这里会展示产品公告。",
+    "title": "Welcome to the help center",
+    "message": "Product announcements appear here.",
     "publishedAt": "2026-06-03",
     "level": "warning",
-    "linkTitle": "查看项目",
+    "linkTitle": "View project",
     "linkURL": "https://example.com",
     "isPinned": true,
     "expiresAt": "2026-06-09"
@@ -224,6 +225,52 @@ void main() {
 
     expect(controller.versionHistory.first.videoTitle, 'Walkthrough');
     expect(controller.versionHistory.first.videoLinks, hasLength(1));
+  });
+  testWidgets('shows all versions by default when latest-only mode is disabled',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    final config = AppHelpCenterConfig(
+      appName: 'Demo',
+      showOnlyLatestVersionByDefault: false,
+      versionHistory: [
+        VersionHistoryItem(
+          versionName: 'v2.0.0',
+          publishedAt: DateTime(2026, 6, 2),
+          changes: 'Second release',
+        ),
+        VersionHistoryItem(
+          versionName: 'v1.0.0',
+          publishedAt: DateTime(2026, 6),
+          changes: 'Initial release',
+        ),
+      ],
+    );
+
+    await tester
+        .pumpWidget(MaterialApp(home: AppHelpCenterPage(config: config)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('v2.0.0'), findsOneWidget);
+    expect(find.text('v1.0.0'), findsOneWidget);
+  });
+
+  test('support actions record review prompt activity', () async {
+    SharedPreferences.setMockInitialValues({});
+    final controller = AppHelpCenterController(
+      config: const AppHelpCenterConfig(
+        appName: 'Demo',
+        reviewPrompt: ReviewPromptConfig(
+          appName: 'Demo',
+          defaultClickThreshold: 0,
+          defaultDaysThreshold: 0,
+        ),
+      ),
+    );
+
+    await controller.openSupport();
+
+    expect(controller.reviewPromptManager?.shouldShowPrompt, isTrue);
   });
 }
 

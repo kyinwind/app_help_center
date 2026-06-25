@@ -39,23 +39,33 @@ final _config = AppHelpCenterConfig(
       debugPrint(payload.combinedContent);
     },
   ),
+  reviewPrompt: ReviewPromptConfig(
+    appName: 'Demo App',
+    defaultClickThreshold: 5,
+    defaultDaysThreshold: 3,
+    onReview: () {
+      debugPrint('Open your store listing or in-app review flow here.');
+    },
+  ),
   remoteVersionSupplementUrl:
       Uri.parse('https://example.com/version-supplements.json'),
   announcements: [
     HelpAnnouncement(
       id: 'welcome-help-center',
-      title: '欢迎使用帮助中心',
-      message: '这里会展示产品公告、重要提醒和与用户沟通相关的内容。',
+      title: 'Welcome to the help center',
+      message:
+          'Use this area for product announcements, support notices, and user communication.',
       publishedAt: DateTime(2026, 6, 3),
       level: HelpAnnouncementLevel.info,
-      linkTitle: '查看项目',
-      linkUrl: Uri.parse('https://github.com/yangxuehui/app_help_center'),
+      linkTitle: 'View project',
+      linkUrl: Uri.parse('https://github.com/kyinwind/app_help_center'),
       isPinned: true,
     ),
     HelpAnnouncement(
       id: 'scheduled-maintenance',
-      title: '技术支持服务维护提醒',
-      message: '技术支持页面将在维护窗口内短暂不可用，用户仍可通过邮件提交反馈。',
+      title: 'Support maintenance notice',
+      message:
+          'The support page may be briefly unavailable during maintenance. Email feedback remains available.',
       publishedAt: DateTime(2026, 6),
       level: HelpAnnouncementLevel.warning,
       expiresAt: DateTime(2026, 7),
@@ -65,38 +75,42 @@ final _config = AppHelpCenterConfig(
     VersionHistoryItem(
       versionName: 'v1.1.0',
       publishedAt: DateTime(2026, 6, 6),
-      changes: '1. 新增远程公告\n2. 优化帮助中心布局\n3. 修复若干体验问题',
-      videoTitle: '版本介绍视频',
+      changes:
+          '1. Added remote announcements\n2. Improved help center layout\n3. Fixed several experience issues',
+      videoTitle: 'Release walkthrough',
       videoLinks: [
         HelpVideoLink(title: 'YouTube', url: Uri.parse('https://youtube.com')),
         HelpVideoLink(
-            title: 'Bilibili', url: Uri.parse('https://bilibili.com')),
+          title: 'Bilibili',
+          url: Uri.parse('https://bilibili.com'),
+        ),
       ],
     ),
     VersionHistoryItem(
       versionName: 'v1.0.0',
       publishedAt: DateTime(2026, 5, 20),
-      changes: '首次发布帮助中心、FAQ、快速入口和评分入口。',
+      changes:
+          'Initial release with help center, FAQ, quick links, and rating entry points.',
     ),
   ],
   quickLinks: [
     HelpQuickLink.url(
-      title: '使用指南',
-      subtitle: '查看在线文档',
+      title: 'User guide',
+      subtitle: 'Read the online documentation',
       icon: Icons.menu_book_outlined,
       url: Uri.parse('https://example.com/guide'),
     ),
   ],
   faqItems: [
     HelpFaqItem(
-      question: '如何开始使用？',
+      question: 'How do I get started?',
       answer:
-          '导入 app_help_center，创建 AppHelpCenterConfig，然后展示 AppHelpCenterPage。',
+          'Import app_help_center, create an AppHelpCenterConfig, then show AppHelpCenterPage.',
     ),
     HelpFaqItem(
-      question: '远程公告支持什么格式？',
+      question: 'Which remote announcement format is supported?',
       answer:
-          '支持 SwiftHelpCenter 风格 JSON 数组，也支持 {"announcements": [...]} 包装结构。',
+          'Use a SwiftHelpCenter-style JSON array or wrap the array in an announcements field.',
     ),
   ],
 );

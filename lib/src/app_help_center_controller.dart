@@ -27,7 +27,8 @@ class AppHelpCenterController extends ChangeNotifier {
             versionSupplementService ?? const VersionSupplementService(),
         _feedbackService = feedbackService ?? const FeedbackService(),
         _linkLauncher = linkLauncher ?? const HelpLinkLauncher(),
-        _reviewPromptManager = reviewPromptManager ?? _createReviewPromptManager(config) {
+        _reviewPromptManager =
+            reviewPromptManager ?? _createReviewPromptManager(config) {
     _versionHistory = _sortVersions(config.versionHistory);
     _localAnnouncements = _sortAnnouncements(config.announcements);
   }
@@ -216,6 +217,8 @@ class AppHelpCenterController extends ChangeNotifier {
   }
 
   Future<void> openQuickLink(HelpQuickLink link) async {
+    _recordReviewPromptAction('quickLink.${link.actionType.name}');
+
     final onTap = link.onTap;
     if (onTap != null) {
       onTap();
@@ -231,13 +234,16 @@ class AppHelpCenterController extends ChangeNotifier {
       case HelpQuickLinkActionType.feedback:
         break;
       case HelpQuickLinkActionType.rating:
-        await openRating();
+        await openRating(recordReviewAction: false);
       case HelpQuickLinkActionType.support:
-        await openSupport();
+        await openSupport(recordReviewAction: false);
     }
   }
 
-  Future<void> openSupport() async {
+  Future<void> openSupport({bool recordReviewAction = true}) async {
+    if (recordReviewAction) {
+      _recordReviewPromptAction('support');
+    }
     final callback = config.onOpenSupport;
     if (callback != null) {
       await callback();
@@ -249,7 +255,10 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
-  Future<void> openRating() async {
+  Future<void> openRating({bool recordReviewAction = true}) async {
+    if (recordReviewAction) {
+      _recordReviewPromptAction('rating');
+    }
     final callback = config.onOpenRating;
     if (callback != null) {
       await callback();
@@ -266,6 +275,7 @@ class AppHelpCenterController extends ChangeNotifier {
   bool get hasFeedback => config.feedback?.isConfigured == true;
 
   Future<void> openWebFormFeedback() async {
+    _recordReviewPromptAction('feedback.webForm');
     final url = config.feedback?.webFormUrl;
     if (url != null) {
       await _linkLauncher.open(url);
@@ -283,6 +293,10 @@ class AppHelpCenterController extends ChangeNotifier {
   ///
   /// If `true`, the caller should call `showReviewPromptDialog()` from the view.
   bool checkReviewPrompt(String actType) {
+    return _recordReviewPromptAction(actType);
+  }
+
+  bool _recordReviewPromptAction(String actType) {
     return _reviewPromptManager?.needShowPopup(actType) ?? false;
   }
 

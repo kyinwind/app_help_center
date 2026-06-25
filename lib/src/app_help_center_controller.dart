@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'app_help_center_config.dart';
 import 'models/help_announcement.dart';
 import 'models/help_quick_link.dart';
+import 'models/review_prompt.dart';
 import 'models/version_history_item.dart';
 import 'services/announcement_service.dart';
 import 'services/app_help_center_storage.dart';
@@ -18,13 +19,15 @@ class AppHelpCenterController extends ChangeNotifier {
     VersionSupplementService? versionSupplementService,
     FeedbackService? feedbackService,
     HelpLinkLauncher? linkLauncher,
+    ReviewPromptManager? reviewPromptManager,
   })  : storage = storage ?? AppHelpCenterStorage(),
         _announcementService =
             announcementService ?? const AnnouncementService(),
         _versionSupplementService =
             versionSupplementService ?? const VersionSupplementService(),
         _feedbackService = feedbackService ?? const FeedbackService(),
-        _linkLauncher = linkLauncher ?? const HelpLinkLauncher() {
+        _linkLauncher = linkLauncher ?? const HelpLinkLauncher(),
+        _reviewPromptManager = reviewPromptManager ?? _createReviewPromptManager(config) {
     _versionHistory = _sortVersions(config.versionHistory);
     _localAnnouncements = _sortAnnouncements(config.announcements);
   }
@@ -35,6 +38,19 @@ class AppHelpCenterController extends ChangeNotifier {
   final VersionSupplementService _versionSupplementService;
   final FeedbackService _feedbackService;
   final HelpLinkLauncher _linkLauncher;
+  final ReviewPromptManager? _reviewPromptManager;
+
+  /// The review prompt manager, accessible from UI for showing the dialog.
+  /// Returns `null` when reviewPrompt config is not provided.
+  ReviewPromptManager? get reviewPromptManager => _reviewPromptManager;
+
+  static ReviewPromptManager? _createReviewPromptManager(
+    AppHelpCenterConfig config,
+  ) {
+    final promptConfig = config.reviewPrompt;
+    if (promptConfig == null) return null;
+    return ReviewPromptManager(config: promptConfig);
+  }
 
   bool _isLoading = false;
   Object? _lastError;
@@ -258,6 +274,16 @@ class AppHelpCenterController extends ChangeNotifier {
 
   Future<void> openUrl(Uri url) async {
     await _linkLauncher.open(url);
+  }
+
+  /// Check whether the review prompt should be shown for the given action type.
+  ///
+  /// Returns `true` if the dual threshold (click count + day count) is met.
+  /// Mirrors SwiftHelpCenter's `checkReviewPopup(_:)` top-level function.
+  ///
+  /// If `true`, the caller should call `showReviewPromptDialog()` from the view.
+  bool checkReviewPrompt(String actType) {
+    return _reviewPromptManager?.needShowPopup(actType) ?? false;
   }
 
   Future<void> fetchRemoteVersionSupplements() async {

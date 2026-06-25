@@ -81,6 +81,18 @@ class AppHelpCenterLocalizations {
     'feedback.discordWebhook': 'Discord',
     'feedback.dingTalkWebhook': 'DingTalk',
     'feedback.custom': 'Custom',
+    'feedbackFollowUp': 'We read every piece of feedback and use it to improve the product.',
+    'feedbackRate': 'Rate App',
+    'feedbackTechSupport': 'Tech Support',
+    'feedbackCharCount': '{value} / 1700',
+    'screenshotAdd': 'Add screenshot',
+    'screenshotMax': 'Max 5 screenshots',
+    'reviewPrompt.title': 'Enjoying this app?',
+    'reviewPrompt.request': 'A quick rating on the App Store would help us a lot. Thanks for your support!',
+    'reviewPrompt.never': 'Never prompt',
+    'reviewPrompt.holdOn': 'Hold on',
+    'reviewPrompt.settings': 'Go to settings',
+    'reviewPrompt.review': 'Go to review',
   };
 
   static const _chinese = {
@@ -128,5 +140,17 @@ class AppHelpCenterLocalizations {
     'feedback.discordWebhook': 'Discord',
     'feedback.dingTalkWebhook': '钉钉',
     'feedback.custom': '自定义',
+    'feedbackFollowUp': '我们会认真阅读每一条反馈，用来持续改进产品。',
+    'feedbackRate': '给应用评分',
+    'feedbackTechSupport': '技术支持',
+    'feedbackCharCount': '{value} / 1700',
+    'screenshotAdd': '添加截图',
+    'screenshotMax': '最多 5 张截图',
+    'reviewPrompt.title': '觉得这个应用不错？',
+    'reviewPrompt.request': '在 App Store 给个评分对我们帮助很大，感谢你的支持！',
+    'reviewPrompt.never': '不再提醒',
+    'reviewPrompt.holdOn': '稍后再说',
+    'reviewPrompt.settings': '去设置',
+    'reviewPrompt.review': '去评价',
   };
 }

@@ -6,8 +6,10 @@ import '../app_help_center_controller.dart';
 import '../l10n/app_help_center_localizations.dart';
 import '../models/help_announcement.dart';
 import '../models/help_quick_link.dart';
+import '../models/review_prompt.dart';
 import '../models/version_history_item.dart';
 import 'help_feedback_page.dart';
+import 'review_prompt_dialog.dart';
 
 class AppHelpCenterPage extends StatefulWidget {
   const AppHelpCenterPage({
@@ -41,15 +43,39 @@ class _AppHelpCenterPageState extends State<AppHelpCenterPage> {
         widget.controller ?? AppHelpCenterController(config: widget.config);
     _controller.addListener(_handleControllerChange);
     _controller.load(refreshRemote: widget.config.refreshRemoteOnOpen);
+
+    // Listen for review prompt state changes
+    final manager = _controller.reviewPromptManager;
+    if (manager != null) {
+      manager.addListener(_handleReviewPromptChange);
+    }
   }
 
   @override
   void dispose() {
     _controller.removeListener(_handleControllerChange);
+    final manager = _controller.reviewPromptManager;
+    if (manager != null) {
+      manager.removeListener(_handleReviewPromptChange);
+      manager.dispose();
+    }
     if (_ownsController) {
       _controller.dispose();
     }
     super.dispose();
+  }
+
+  void _handleReviewPromptChange() {
+    if (!mounted) return;
+    final manager = _controller.reviewPromptManager;
+    if (manager == null || !manager.shouldShowPrompt) return;
+
+    final l10n = AppHelpCenterLocalizations.of(
+      context,
+      locale: widget.config.locale,
+      overrides: widget.config.copyOverrides,
+    );
+    showReviewPromptDialog(context, manager, l10n);
   }
 
   void _handleControllerChange() {

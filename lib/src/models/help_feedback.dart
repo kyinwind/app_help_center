@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum HelpFeedbackChannel {
   email,
   webForm,
@@ -20,6 +22,8 @@ class HelpFeedbackConfig {
     this.subject = 'App Feedback',
     this.includeSystemInfo = true,
     this.allowChannelSelection = true,
+    this.allowScreenshots = true,
+    this.maxScreenshots = 5,
   });
 
   final String? email;
@@ -30,6 +34,14 @@ class HelpFeedbackConfig {
   final String subject;
   final bool includeSystemInfo;
   final bool allowChannelSelection;
+
+  /// Whether to show screenshot picker when Discord channel is selected.
+  /// Mirrors SwiftHelpCenter's `ScreenshotPickerView`.
+  final bool allowScreenshots;
+
+  /// Maximum number of screenshots allowed.
+  /// Default 5, matching SwiftHelpCenter.
+  final int maxScreenshots;
 
   bool get isConfigured => availableChannels.isNotEmpty;
 
@@ -50,12 +62,25 @@ class HelpFeedbackPayload {
     this.contact,
     this.systemInfo,
     this.channels = const [],
+    this.attachments = const [],
+    this.attachmentFilenames = const [],
   });
 
   final String content;
   final String? contact;
   final String? systemInfo;
   final List<HelpFeedbackChannel> channels;
+
+  /// Raw image bytes for Discord multipart upload (PNG/JPEG).
+  /// Up to 5 images, matching SwiftHelpCenter's max.
+  final List<Uint8List> attachments;
+
+  /// Corresponding filenames for each attachment (e.g. "screenshot1.png").
+  /// Must match `attachments` length if provided.
+  final List<String> attachmentFilenames;
+
+  /// Whether any image attachments are present.
+  bool get hasAttachments => attachments.isNotEmpty;
 
   String get combinedContent {
     final buffer = StringBuffer(content.trim());

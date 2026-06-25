@@ -4,6 +4,7 @@ import 'models/help_announcement.dart';
 import 'models/help_faq_item.dart';
 import 'models/help_feedback.dart';
 import 'models/help_quick_link.dart';
+import 'models/review_prompt.dart';
 import 'models/version_history_item.dart';
 
 typedef AnnouncementRemoteParser = List<HelpAnnouncement> Function(
@@ -39,6 +40,7 @@ class AppHelpCenterConfig {
         'app_help_center.version_history.last_viewed_published_at',
     this.announcementStorageKey = 'app_help_center.announcements.read_ids',
     this.markExistingVersionsAsReadOnFirstLoad = true,
+    this.reviewPrompt,
   });
 
   final String appName;
@@ -63,4 +65,5 @@ class AppHelpCenterConfig {
   final String versionHistoryStorageKey;
   final String announcementStorageKey;
   final bool markExistingVersionsAsReadOnFirstLoad;
+  final ReviewPromptConfig? reviewPrompt;
 }

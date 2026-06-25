@@ -16,7 +16,9 @@ pure Flutter/Dart UI and models.
 - Version history with latest-only default view and expand-all behavior.
 - Video links for version history items.
 - FAQ disclosure list.
-- Built-in feedback form with email, web form, webhook, and custom submit channels.
+- Built-in feedback form with email, web form, webhook, custom submit channels, screenshot upload, and character-count display.
+- Discord webhook support with multipart image upload.
+- Review prompt manager with dual click/day thresholds, four-button dialog, and persistent silent state.
 - Quick links for URLs, feedback, rating, and support.
 - Built-in Chinese and English copy.
 - Caller copy overrides.
@@ -26,7 +28,7 @@ pure Flutter/Dart UI and models.
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.1
+  app_help_center: ^0.2.2
 ```
 
 ## Basic Usage
@@ -42,6 +44,10 @@ final config = AppHelpCenterConfig(
   feedback: HelpFeedbackConfig(
     email: 'feedback@example.com',
     webFormUrl: Uri.parse('https://example.com/feedback'),
+    discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/…'),
+    dingTalkWebhookUrl:
+        Uri.parse('https://oapi.dingtalk.com/robot/send?access_token=…'),
+    allowScreenshots: true,
     submitHandler: (payload) async {
       // Send to your own backend.
     },
@@ -83,6 +89,98 @@ class HelpScreen extends StatelessWidget {
   }
 }
 ```
+
+## Help Center Button with Unread Badge
+
+Use `AppHelpCenterController` to drive a help center button. The controller is
+a `ChangeNotifier` — listen to it to show a badge when there are unread
+announcements or new version entries.
+
+```dart
+class _MyAppState extends State<MyApp> {
+  late final _helpController = AppHelpCenterController(config: _helpConfig);
+
+  @override
+  void initState() {
+    super.initState();
+    _helpController.load();
+  }
+
+  @override
+  void dispose() {
+    _helpController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          HelpCenterButton(controller: _helpController),
+        ],
+      ),
+    );
+  }
+}
+
+class HelpCenterButton extends StatefulWidget {
+  final AppHelpCenterController controller;
+
+  const HelpCenterButton({super.key, required this.controller});
+
+  @override
+  State<HelpCenterButton> createState() => _HelpCenterButtonState();
+}
+
+class _HelpCenterButtonState extends State<HelpCenterButton> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onChange);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
+    return Badge(
+      isLabelVisible: widget.controller.hasUnreadContent,
+      child: IconButton(
+        icon: const Icon(Icons.help_outline),
+        tooltip: 'Help Center',
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AppHelpCenterPage(
+                controller: widget.controller,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+Key points:
+
+- **`controller.addListener` + `setState`** keeps the badge in sync. The
+  controller notifies listeners whenever unread state changes.
+- **`controller.hasUnreadContent`** returns `true` when there are unread
+  announcements or unseen version history entries. Use `hasUnreadAnnouncements`
+  and `hasUnreadVersions` to query individually.
+- **Pass the same controller** to `AppHelpCenterPage` so the page can mark
+  items as read while the badge stays in sync.
+- **Call `controller.load()`** once at startup to pull remote data and restore
+  read state from disk.
 
 ## Remote Announcements
 
@@ -152,9 +250,61 @@ Available channels:
 
 - Email through `mailto:`.
 - Web form URL.
-- Discord webhook.
+- Discord webhook (with multipart image upload support).
 - DingTalk webhook.
 - Custom submit handler.
+
+### Screenshots
+
+The feedback page includes a screenshot picker when `discordWebhookUrl` is
+configured. Tap the add button to pick images from your device gallery. Up to
+5 screenshots can be attached per submission.
+
+```dart
+HelpFeedbackConfig(
+  discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/...'),
+  allowScreenshots: true,   // default: true when channel supports it
+  maxScreenshots: 5,        // default: 5
+);
+```
+
+### Character Count
+
+The feedback text field shows a live character count (up to 1700 characters),
+mirroring the behavior of SwiftHelpCenter.
+
+## Review Prompt
+
+The review prompt manager shows a native-feeling dialog after users have
+interacted with the app enough times over enough days. Both thresholds must
+be met before the dialog appears.
+
+```dart
+AppHelpCenterConfig(
+  appName: 'Demo App',
+  reviewPrompt: ReviewPromptConfig(
+    appleID: '1234567890',
+    defaultClickThreshold: 5,
+    defaultDaysThreshold: 3,
+    onOpenSettings: () {
+      // Navigate to your app's settings page.
+    },
+  ),
+);
+```
+
+The dialog has four buttons:
+
+| Button | Behavior |
+|--------|----------|
+| **Rate Now** | Opens the system rating dialog (`SKStoreReviewController` on iOS, Play Store on Android). |
+| **Later** | Postpones the prompt by raising both thresholds (+30 clicks, +3 days). |
+| **Settings** | Calls the `onOpenSettings` callback so you can open your app's settings. |
+| **Never** | Silences the prompt permanently. |
+
+Call `controller.checkReviewPrompt(actType)` from any action point in your
+app to record a click. The help center page automatically records clicks for
+quick links, feedback, and support actions.
 
 ## Remote Version Supplements
 
@@ -216,16 +366,16 @@ and custom platform integrations are planned for later versions.
 ## Roadmap
 
 - `0.1.x`: Help Center MVP.
-- `0.2.x`: Feedback page, mail/webhook/custom submit handlers, system info.
-- `0.3.x`: Review prompt manager with click/day thresholds.
-- Later: more layout polish, screenshots, changelog parsing, and optional
-  advanced integrations.
+- `0.2.x`: Feedback page, mail/webhook/custom submit handlers, system info, screenshots, review prompt manager with click/day thresholds.
+- Later: more layout polish, changelog parsing, design system module, and optional advanced integrations.
 
 ## Relationship to SwiftHelpCenter
 
 SwiftHelpCenter is a Swift Package for macOS and iOS apps. `app_help_center`
 rebuilds the same product idea for Flutter apps without binding to SwiftUI,
-AppKit, or UIKit.
+AppKit, or UIKit. Key features including announcements, version history,
+feedback, review prompt manager, and remote data fetching have been ported
+to pure Dart/Flutter.
 
 ## License
 

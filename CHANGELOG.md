@@ -1,3 +1,9 @@
+## 0.2.3
+
+- Added HelpFeedbackConfig.dingTalkContentBuilder to customize DingTalk message content from the app layer.
+- Kept DingTalk's default feedback message unchanged when no content builder is configured.
+- Documented DingTalk keyword-security usage in the README.
+
 ## 0.2.2
 
 - Added review prompt manager with dual click/day thresholds, four-button dialog (Rate Now / Later / Settings / Never), and persistent silent state via `AppHelpCenterConfig.reviewPrompt`.

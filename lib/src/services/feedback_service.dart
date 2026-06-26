@@ -179,10 +179,13 @@ class FeedbackService {
     if (url == null) {
       return;
     }
+    final content =
+        config.dingTalkContentBuilder?.call(payload) ?? payload.combinedContent;
+
     await _postJson(url, {
       'msgtype': 'text',
       'text': {
-        'content': payload.combinedContent,
+        'content': content,
       },
     });
   }

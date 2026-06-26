@@ -12,12 +12,17 @@ typedef HelpFeedbackSubmitHandler = Future<void> Function(
   HelpFeedbackPayload payload,
 );
 
+typedef DingTalkContentBuilder = String Function(
+  HelpFeedbackPayload payload,
+);
+
 class HelpFeedbackConfig {
   const HelpFeedbackConfig({
     this.email,
     this.webFormUrl,
     this.discordWebhookUrl,
     this.dingTalkWebhookUrl,
+    this.dingTalkContentBuilder,
     this.submitHandler,
     this.subject = 'App Feedback',
     this.includeSystemInfo = true,
@@ -30,6 +35,7 @@ class HelpFeedbackConfig {
   final Uri? webFormUrl;
   final Uri? discordWebhookUrl;
   final Uri? dingTalkWebhookUrl;
+  final DingTalkContentBuilder? dingTalkContentBuilder;
   final HelpFeedbackSubmitHandler? submitHandler;
   final String subject;
   final bool includeSystemInfo;

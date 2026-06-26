@@ -28,7 +28,7 @@ pure Flutter/Dart UI and models.
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.2
+  app_help_center: ^0.2.3
 ```
 
 ## Basic Usage
@@ -47,6 +47,7 @@ final config = AppHelpCenterConfig(
     discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/...'),
     dingTalkWebhookUrl:
         Uri.parse('https://oapi.dingtalk.com/robot/send?access_token=...'),
+    dingTalkContentBuilder: (payload) => payload.combinedContent,
     allowScreenshots: true,
     submitHandler: (payload) async {
       // Send to your own backend.
@@ -239,6 +240,7 @@ AppHelpCenterConfig(
     webFormUrl: Uri.parse('https://example.com/feedback'),
     discordWebhookUrl: Uri.parse('https://discord.com/api/webhooks/...'),
     dingTalkWebhookUrl: Uri.parse('https://oapi.dingtalk.com/robot/send?...'),
+    dingTalkContentBuilder: (payload) => payload.combinedContent,
     submitHandler: (payload) async {
       await myApi.sendFeedback(payload.content);
     },
@@ -254,6 +256,23 @@ Available channels:
 - Discord webhook (with multipart image upload support).
 - DingTalk webhook.
 - Custom submit handler.
+
+### DingTalk Message Content
+
+DingTalk robots may require every incoming message to contain a configured
+security keyword. Keep that keyword in your app layer instead of hard-coding it
+inside the package. Use `dingTalkContentBuilder` to customize only the DingTalk
+message body:
+
+```dart
+HelpFeedbackConfig(
+  dingTalkWebhookUrl: Uri.parse('https://oapi.dingtalk.com/robot/send?...'),
+  dingTalkContentBuilder: (payload) => 'feedback\n${payload.combinedContent}',
+);
+```
+
+If `dingTalkContentBuilder` is omitted, DingTalk receives
+`payload.combinedContent` unchanged.
 
 ### Screenshots
 

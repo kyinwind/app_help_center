@@ -226,6 +226,28 @@ void main() {
     expect(controller.versionHistory.first.videoTitle, 'Walkthrough');
     expect(controller.versionHistory.first.videoLinks, hasLength(1));
   });
+  testWidgets('shows announcement published date', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    final config = AppHelpCenterConfig(
+      appName: 'Demo',
+      announcements: [
+        HelpAnnouncement(
+          id: 'maintenance',
+          title: 'Maintenance',
+          message: 'Short maintenance window.',
+          publishedAt: DateTime(2026, 6, 3),
+        ),
+      ],
+    );
+
+    await tester
+        .pumpWidget(MaterialApp(home: AppHelpCenterPage(config: config)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maintenance'), findsOneWidget);
+    expect(find.text('Jun 3, 2026'), findsOneWidget);
+  });
   testWidgets('shows all versions by default when latest-only mode is disabled',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

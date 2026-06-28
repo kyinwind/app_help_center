@@ -417,8 +417,21 @@ class _AnnouncementCardState extends State<_AnnouncementCard> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(widget.item.title,
-                            style: theme.textTheme.titleSmall),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(widget.item.title,
+                                style: theme.textTheme.titleSmall),
+                            Text(
+                              DateFormat.yMMMd(
+                                      widget.l10n.locale.toLanguageTag())
+                                  .format(widget.item.publishedAt),
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           widget.item.message,

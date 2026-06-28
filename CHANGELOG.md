@@ -1,3 +1,7 @@
+## 0.2.4
+
+- Displayed announcement published dates in help center announcement cards.
+
 ## 0.2.3
 
 - Added HelpFeedbackConfig.dingTalkContentBuilder to customize DingTalk message content from the app layer.

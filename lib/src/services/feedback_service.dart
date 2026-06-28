@@ -5,7 +5,9 @@ import 'package:http_parser/http_parser.dart';
 import '../models/help_feedback.dart';
 import 'help_link_launcher.dart';
 
+/// Submits feedback through the channels configured by HelpFeedbackConfig.
 class FeedbackService {
+  /// Creates a feedback service with optional HTTP client and link launcher.
   const FeedbackService({
     http.Client? client,
     HelpLinkLauncher? linkLauncher,
@@ -15,6 +17,7 @@ class FeedbackService {
   final http.Client? _client;
   final HelpLinkLauncher _linkLauncher;
 
+  /// Submits the payload to the selected or configured feedback channels.
   Future<void> submit({
     required HelpFeedbackConfig config,
     required HelpFeedbackPayload payload,
@@ -100,10 +103,10 @@ class FeedbackService {
 
   /// Send feedback to Discord with image attachments using multipart/form-data.
   ///
-  /// Mirrors SwiftHelpCenter's `sendToDiscord()` with attachments branch.
+  /// Mirrors SwiftHelpCenter's sendToDiscord with attachments branch.
   /// Uses the Discord API's multipart upload format:
-  /// - `payload_json` field with the text content
-  /// - `files[0]`..`files[N]` fields with image data
+  /// - payload_json field with the text content
+  /// - file fields with image data
   Future<void> _sendDiscordMultipart(
     Uri url,
     HelpFeedbackPayload payload,
@@ -152,7 +155,7 @@ class FeedbackService {
   }
 
   /// Determine MIME type from filename extension.
-  /// Mirrors SwiftHelpCenter's `mimeTypeFor(url:)`.
+  /// Mirrors SwiftHelpCenter's mimeTypeFor(url:).
   String _mimeTypeForFilename(String filename) {
     final ext = filename.split('.').last.toLowerCase();
     switch (ext) {

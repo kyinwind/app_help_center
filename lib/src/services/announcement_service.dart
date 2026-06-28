@@ -5,11 +5,14 @@ import 'package:http/http.dart' as http;
 import '../app_help_center_config.dart';
 import '../models/help_announcement.dart';
 
+/// Fetches and parses remote help center announcements.
 class AnnouncementService {
+  /// Creates an announcement service with an optional HTTP client.
   const AnnouncementService({http.Client? client}) : _client = client;
 
   final http.Client? _client;
 
+  /// Fetches announcements using config.remoteAnnouncementsUrl.
   Future<List<HelpAnnouncement>> fetch(AppHelpCenterConfig config) async {
     final url = config.remoteAnnouncementsUrl;
     if (url == null) {
@@ -39,6 +42,7 @@ class AnnouncementService {
     }
   }
 
+  /// Parses SwiftHelpCenter-compatible announcement JSON.
   static List<HelpAnnouncement> parseAnnouncements(Object? decoded) {
     if (decoded is List<dynamic>) {
       return decoded

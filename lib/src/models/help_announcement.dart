@@ -1,11 +1,21 @@
+/// Visual importance level for a help center announcement.
 enum HelpAnnouncementLevel {
+  /// Informational announcement.
   info,
+
+  /// Completed or successful event.
   success,
+
+  /// Notice that may need user attention.
   warning,
+
+  /// Important announcement that should stand out.
   critical,
 }
 
+/// Announcement displayed in the help center.
 class HelpAnnouncement {
+  /// Creates a help center announcement.
   const HelpAnnouncement({
     required this.id,
     required this.title,
@@ -18,21 +28,40 @@ class HelpAnnouncement {
     this.expiresAt,
   });
 
+  /// Stable identifier used for read-state tracking and remote merging.
   final String id;
+
+  /// Announcement title.
   final String title;
+
+  /// Main announcement body text.
   final String message;
+
+  /// Publication date used for sorting and display.
   final DateTime publishedAt;
+
+  /// Visual level used for badge color and icon.
   final HelpAnnouncementLevel level;
+
+  /// Optional label for the details link.
   final String? linkTitle;
+
+  /// Optional details URL opened from the expanded card.
   final Uri? linkUrl;
+
+  /// Whether the announcement is sorted before unpinned announcements.
   final bool isPinned;
+
+  /// Optional expiration date after which the announcement is hidden.
   final DateTime? expiresAt;
 
+  /// Whether expiresAt has passed.
   bool get isExpired {
     final expiresAt = this.expiresAt;
     return expiresAt != null && DateTime.now().isAfter(expiresAt);
   }
 
+  /// Creates an announcement from SwiftHelpCenter-compatible JSON.
   factory HelpAnnouncement.fromJson(Map<String, dynamic> json) {
     final publishedAt = _parseDate(json['publishedAt']) ??
         _parseDate(json['published_at']) ??
@@ -55,6 +84,7 @@ class HelpAnnouncement {
     );
   }
 
+  /// Converts this announcement to JSON.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

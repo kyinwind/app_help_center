@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 
+/// Action performed when a quick link is tapped.
 enum HelpQuickLinkActionType {
+  /// Opens HelpQuickLink.url.
   url,
+
+  /// Opens the built-in feedback form.
   feedback,
+
+  /// Opens the configured rating action.
   rating,
+
+  /// Opens the configured support action.
   support,
 }
 
+/// Shortcut action shown in the help center quick links section.
 class HelpQuickLink {
+  /// Creates a custom quick link.
   HelpQuickLink({
     String? id,
     required this.title,
@@ -18,6 +28,7 @@ class HelpQuickLink {
     this.onTap,
   }) : id = id ?? title;
 
+  /// Creates a quick link that opens a URL.
   HelpQuickLink.url({
     String? id,
     required String title,
@@ -33,6 +44,7 @@ class HelpQuickLink {
           url: url,
         );
 
+  /// Creates a quick link that opens the feedback form.
   HelpQuickLink.feedback({
     String? title,
     String? subtitle,
@@ -47,6 +59,7 @@ class HelpQuickLink {
           onTap: onTap,
         );
 
+  /// Creates a quick link that opens the rating action.
   HelpQuickLink.rating({
     String? title,
     String? subtitle,
@@ -61,6 +74,7 @@ class HelpQuickLink {
           onTap: onTap,
         );
 
+  /// Creates a quick link that opens the support action.
   HelpQuickLink.support({
     String? title,
     String? subtitle,
@@ -75,11 +89,24 @@ class HelpQuickLink {
           onTap: onTap,
         );
 
+  /// Stable identifier for this quick link.
   final String id;
+
+  /// Title shown in the quick link card.
   final String title;
+
+  /// Optional subtitle shown under title.
   final String? subtitle;
+
+  /// Icon shown beside the title.
   final IconData icon;
+
+  /// Action type used by the controller.
   final HelpQuickLinkActionType actionType;
+
+  /// URL opened when actionType is HelpQuickLinkActionType.url.
   final Uri? url;
+
+  /// Optional custom tap callback.
   final VoidCallback? onTap;
 }

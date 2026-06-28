@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Configuration for the review prompt manager.
 ///
-/// Mirrors SwiftHelpCenter's `ReviewPromptConfiguration` with dual threshold
+/// Uses dual threshold
 /// logic (click count + day count) and four action buttons.
 class ReviewPromptConfig {
   const ReviewPromptConfig({
@@ -126,17 +126,12 @@ class _ReviewPromptInfo {
 
 /// Manages the review prompt lifecycle with dual threshold logic.
 ///
-/// Mirrors SwiftHelpCenter's `ReviewPromptManager.shared` singleton pattern.
+/// Tracks user actions and decides when the prompt should appear.
 /// The manager tracks user actions (clicks) and days since first action,
 /// then triggers a review prompt when both thresholds are met.
 ///
-/// Usage:
-/// ```dart
-/// final manager = ReviewPromptManager(config: myConfig);
-/// if (manager.needShowPopup('AppLogin')) {
-///   showReviewPromptDialog(context, manager);
-/// }
-/// ```
+/// Call needShowPopup when important user actions happen, then show the
+/// dialog when it returns true.
 class ReviewPromptManager extends ChangeNotifier {
   ReviewPromptManager({
     required this.config,
@@ -207,8 +202,8 @@ class ReviewPromptManager extends ChangeNotifier {
 
   /// Check whether the review prompt should be shown for the given action.
   ///
-  /// Mirrors SwiftHelpCenter's `needShowPopup(type:)`.
-  /// Returns `true` when both click count and day thresholds are met.
+  /// Records the action and evaluates whether to show the prompt.
+  /// Returns true when both click count and day thresholds are met.
   /// Automatically records the action for tracking.
   bool needShowPopup(String actType) {
     if (_info == null || _info!.neverPrompt) {
@@ -238,13 +233,13 @@ class ReviewPromptManager extends ChangeNotifier {
     return false;
   }
 
-  /// User chose "Hold on" (稍后再说).
+  /// Applies the later action selected by the user.
   ///
   /// Resets the popup flag and increases both thresholds:
   /// - Click threshold += 30
   /// - Days threshold += 3
   ///
-  /// Mirrors SwiftHelpCenter's `holdOn()`.
+  /// Increases future thresholds before another prompt can appear.
   void holdOn() {
     if (_info == null) return;
     _info = _info!.copyWith(
@@ -260,7 +255,7 @@ class ReviewPromptManager extends ChangeNotifier {
   /// User chose "Never prompt again".
   ///
   /// Permanently suppresses the review prompt.
-  /// Mirrors SwiftHelpCenter's `neverPrompt()`.
+  /// Prevents future prompts.
   void neverPrompt() {
     if (_info == null) return;
     _info = _info!.copyWith(
@@ -273,7 +268,7 @@ class ReviewPromptManager extends ChangeNotifier {
 
   /// Reset all stored data (for testing purposes).
   ///
-  /// Mirrors SwiftHelpCenter's `cleanData()`.
+  /// Clears persisted review prompt data.
   Future<void> cleanData() async {
     final prefs = await _prefs;
     await prefs.remove('${config.storageKey}.info');

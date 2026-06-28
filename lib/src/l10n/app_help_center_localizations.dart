@@ -1,14 +1,20 @@
 import 'package:flutter/widgets.dart';
 
+/// Lightweight localization helper used by the built-in help center UI.
 class AppHelpCenterLocalizations {
+  /// Creates localized copy with optional per-key overrides.
   const AppHelpCenterLocalizations({
     required this.locale,
     this.overrides = const {},
   });
 
+  /// Locale used to choose built-in copy and format dates.
   final Locale locale;
+
+  /// Per-key text overrides applied before built-in strings.
   final Map<String, String> overrides;
 
+  /// Creates localizations from a BuildContext.
   static AppHelpCenterLocalizations of(
     BuildContext context, {
     Locale? locale,
@@ -20,10 +26,12 @@ class AppHelpCenterLocalizations {
     );
   }
 
+  /// Returns localized text for the key, falling back to English and then the key.
   String text(String key) {
     return overrides[key] ?? _localizedMap[key] ?? _english[key] ?? key;
   }
 
+  /// Returns localized text with {value} replaced by value.
   String format(String key, Object value) {
     return text(key).replaceAll('{value}', value.toString());
   }
@@ -81,14 +89,16 @@ class AppHelpCenterLocalizations {
     'feedback.discordWebhook': 'Discord',
     'feedback.dingTalkWebhook': 'DingTalk',
     'feedback.custom': 'Custom',
-    'feedbackFollowUp': 'We read every piece of feedback and use it to improve the product.',
+    'feedbackFollowUp':
+        'We read every piece of feedback and use it to improve the product.',
     'feedbackRate': 'Rate App',
     'feedbackTechSupport': 'Tech Support',
     'feedbackCharCount': '{value} / 1700',
     'screenshotAdd': 'Add screenshot',
     'screenshotMax': 'Max 5 screenshots',
     'reviewPrompt.title': 'Enjoying this app?',
-    'reviewPrompt.request': 'A quick rating on the App Store would help us a lot. Thanks for your support!',
+    'reviewPrompt.request':
+        'A quick rating on the App Store would help us a lot. Thanks for your support!',
     'reviewPrompt.never': 'Never prompt',
     'reviewPrompt.holdOn': 'Hold on',
     'reviewPrompt.settings': 'Go to settings',

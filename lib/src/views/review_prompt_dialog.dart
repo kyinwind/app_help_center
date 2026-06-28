@@ -5,16 +5,11 @@ import '../models/review_prompt.dart';
 
 /// Shows the review prompt as a modal dialog.
 ///
-/// Mirrors SwiftHelpCenter's `ReviewPromptView` with:
+/// Mirrors SwiftHelpCenter's ReviewPromptView with:
 /// - Star-bubble icon + title + request text
 /// - Four action buttons: Never, Hold on, Settings, Review
 ///
-/// Usage:
-/// ```dart
-/// if (manager.needShowPopup('AppLogin')) {
-///   showReviewPromptDialog(context, manager, l10n);
-/// }
-/// ```
+/// Call this after a review prompt manager reports that a prompt is ready.
 Future<void> showReviewPromptDialog(
   BuildContext context,
   ReviewPromptManager manager,

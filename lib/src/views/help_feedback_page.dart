@@ -10,7 +10,9 @@ import '../services/feedback_service.dart';
 import '../services/help_link_launcher.dart';
 import '../services/system_info_provider.dart';
 
+/// Built-in feedback form for configured feedback channels.
 class HelpFeedbackPage extends StatefulWidget {
+  /// Creates a feedback page for config.feedback.
   const HelpFeedbackPage({
     super.key,
     required this.config,
@@ -19,12 +21,17 @@ class HelpFeedbackPage extends StatefulWidget {
     this.imagePicker,
   });
 
+  /// Help center configuration containing feedback settings.
   final AppHelpCenterConfig config;
+
+  /// Service used to submit feedback.
   final FeedbackService feedbackService;
+
+  /// Provider used to collect system information for feedback.
   final SystemInfoProvider systemInfoProvider;
 
   /// Optional ImagePicker injection (for testing).
-  /// If null, uses the default `ImagePicker()`.
+  /// If null, uses the default ImagePicker.
   final ImagePicker? imagePicker;
 
   @override
@@ -294,6 +301,7 @@ class _FeedbackHeader extends StatelessWidget {
     required this.l10n,
   });
 
+  /// Help center configuration containing feedback settings.
   final AppHelpCenterConfig config;
   final AppHelpCenterLocalizations l10n;
 
@@ -347,6 +355,7 @@ class _FeedbackActions extends StatelessWidget {
     required this.l10n,
   });
 
+  /// Help center configuration containing feedback settings.
   final AppHelpCenterConfig config;
   final AppHelpCenterLocalizations l10n;
   final HelpLinkLauncher linkLauncher = const HelpLinkLauncher();

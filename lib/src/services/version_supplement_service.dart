@@ -5,11 +5,14 @@ import 'package:http/http.dart' as http;
 import '../app_help_center_config.dart';
 import '../models/version_history_item.dart';
 
+/// Fetches and parses remote version supplement metadata.
 class VersionSupplementService {
+  /// Creates a version supplement service with an optional HTTP client.
   const VersionSupplementService({http.Client? client}) : _client = client;
 
   final http.Client? _client;
 
+  /// Fetches version supplements using AppHelpCenterConfig.remoteVersionSupplementUrl.
   Future<List<VersionHistorySupplement>> fetch(
     AppHelpCenterConfig config,
   ) async {
@@ -41,6 +44,7 @@ class VersionSupplementService {
     }
   }
 
+  /// Parses version supplement JSON from a list or wrapped object.
   static List<VersionHistorySupplement> parseSupplements(Object? decoded) {
     if (decoded is List<dynamic>) {
       return decoded

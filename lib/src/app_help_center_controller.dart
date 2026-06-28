@@ -11,7 +11,12 @@ import 'services/feedback_service.dart';
 import 'services/help_link_launcher.dart';
 import 'services/version_supplement_service.dart';
 
+/// State controller for AppHelpCenterPage.
+///
+/// It loads remote data, tracks unread state, opens configured actions, and
+/// exposes computed lists for announcements, versions, and quick links.
 class AppHelpCenterController extends ChangeNotifier {
+  /// Creates a controller for the given help center config.
   AppHelpCenterController({
     required this.config,
     AppHelpCenterStorage? storage,
@@ -33,7 +38,10 @@ class AppHelpCenterController extends ChangeNotifier {
     _localAnnouncements = _sortAnnouncements(config.announcements);
   }
 
+  /// Configuration used by this controller.
   final AppHelpCenterConfig config;
+
+  /// Storage used for read-state persistence.
   final AppHelpCenterStorage storage;
   final AnnouncementService _announcementService;
   final VersionSupplementService _versionSupplementService;
@@ -42,7 +50,7 @@ class AppHelpCenterController extends ChangeNotifier {
   final ReviewPromptManager? _reviewPromptManager;
 
   /// The review prompt manager, accessible from UI for showing the dialog.
-  /// Returns `null` when reviewPrompt config is not provided.
+  /// Returns null when reviewPrompt config is not provided.
   ReviewPromptManager? get reviewPromptManager => _reviewPromptManager;
 
   static ReviewPromptManager? _createReviewPromptManager(
@@ -63,13 +71,22 @@ class AppHelpCenterController extends ChangeNotifier {
   List<HelpAnnouncement> _localAnnouncements = const [];
   List<HelpAnnouncement> _remoteAnnouncements = const [];
 
+  /// Whether the controller is loading initial or remote data.
   bool get isLoading => _isLoading;
+
+  /// Whether remote version supplements are currently loading.
   bool get isLoadingVersionSupplements => _isLoadingVersionSupplements;
+
+  /// Last error captured while loading remote data, if any.
   Object? get lastError => _lastError;
+
+  /// Latest version publication date marked as read.
   DateTime get lastViewedVersionPublishedAt => _lastViewedVersionPublishedAt;
 
+  /// Sorted version history entries with remote supplements applied.
   List<VersionHistoryItem> get versionHistory => _versionHistory;
 
+  /// Sorted, non-expired announcements from local and remote sources.
   List<HelpAnnouncement> get announcements {
     final byId = <String, HelpAnnouncement>{
       for (final item in _localAnnouncements) item.id: item,
@@ -78,6 +95,7 @@ class AppHelpCenterController extends ChangeNotifier {
     return _sortAnnouncements(byId.values.where((item) => !item.isExpired));
   }
 
+  /// Quick links to show, including generated defaults when enabled.
   List<HelpQuickLink> get quickLinks {
     if (!config.includeDefaultQuickLinks) {
       return config.quickLinks;
@@ -112,16 +130,20 @@ class AppHelpCenterController extends ChangeNotifier {
     return links;
   }
 
+  /// Whether any visible announcement has not been marked as read.
   bool get hasUnreadAnnouncements {
     return announcements.any(isAnnouncementUnread);
   }
 
+  /// Whether any version entry is newer than the last read version date.
   bool get hasUnreadVersions {
     return versionHistory.any(isVersionUnread);
   }
 
+  /// Whether announcements or versions contain unread content.
   bool get hasUnreadContent => hasUnreadAnnouncements || hasUnreadVersions;
 
+  /// Loads persisted read state and optionally refreshes remote content.
   Future<void> load({bool refreshRemote = true}) async {
     _isLoading = true;
     _lastError = null;
@@ -145,14 +167,17 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
+  /// Returns whether the item has not been marked as read.
   bool isAnnouncementUnread(HelpAnnouncement item) {
     return !_readAnnouncementIds.contains(item.id);
   }
 
+  /// Returns whether the item is newer than the last read version date.
   bool isVersionUnread(VersionHistoryItem item) {
     return item.publishedAt.isAfter(_lastViewedVersionPublishedAt);
   }
 
+  /// Marks an announcement as read and persists the read id.
   Future<void> markAnnouncementRead(HelpAnnouncement item) async {
     if (!isAnnouncementUnread(item)) {
       return;
@@ -165,6 +190,7 @@ class AppHelpCenterController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Marks a version entry as read through its publication date.
   Future<void> markVersionRead(VersionHistoryItem item) async {
     if (!isVersionUnread(item)) {
       return;
@@ -177,6 +203,7 @@ class AppHelpCenterController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Marks all currently visible announcements and versions as read.
   Future<void> markAllAsRead() async {
     final latestVersionDate = versionHistory
         .map((item) => item.publishedAt)
@@ -206,6 +233,7 @@ class AppHelpCenterController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears persisted read state for announcements and version history.
   Future<void> resetReadState() async {
     await storage.reset(
       versionHistoryStorageKey: config.versionHistoryStorageKey,
@@ -216,6 +244,7 @@ class AppHelpCenterController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Opens or invokes the action represented by the link.
   Future<void> openQuickLink(HelpQuickLink link) async {
     _recordReviewPromptAction('quickLink.${link.actionType.name}');
 
@@ -240,6 +269,7 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
+  /// Opens the configured support callback or URL.
   Future<void> openSupport({bool recordReviewAction = true}) async {
     if (recordReviewAction) {
       _recordReviewPromptAction('support');
@@ -255,6 +285,7 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
+  /// Opens the configured rating callback or URL.
   Future<void> openRating({bool recordReviewAction = true}) async {
     if (recordReviewAction) {
       _recordReviewPromptAction('rating');
@@ -270,10 +301,13 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
+  /// Feedback service used by the built-in feedback page.
   FeedbackService get feedbackService => _feedbackService;
 
+  /// Whether the built-in feedback form has at least one configured channel.
   bool get hasFeedback => config.feedback?.isConfigured == true;
 
+  /// Opens the configured web form feedback URL, if present.
   Future<void> openWebFormFeedback() async {
     _recordReviewPromptAction('feedback.webForm');
     final url = config.feedback?.webFormUrl;
@@ -282,16 +316,17 @@ class AppHelpCenterController extends ChangeNotifier {
     }
   }
 
+  /// Opens an arbitrary external the URL using the configured link launcher.
   Future<void> openUrl(Uri url) async {
     await _linkLauncher.open(url);
   }
 
   /// Check whether the review prompt should be shown for the given action type.
   ///
-  /// Returns `true` if the dual threshold (click count + day count) is met.
-  /// Mirrors SwiftHelpCenter's `checkReviewPopup(_:)` top-level function.
+  /// Returns true if the dual threshold (click count + day count) is met.
+  /// Mirrors SwiftHelpCenter's checkReviewPopup top-level function.
   ///
-  /// If `true`, the caller should call `showReviewPromptDialog()` from the view.
+  /// If true, the caller should call showReviewPromptDialog from the view.
   bool checkReviewPrompt(String actType) {
     return _recordReviewPromptAction(actType);
   }
@@ -300,6 +335,7 @@ class AppHelpCenterController extends ChangeNotifier {
     return _reviewPromptManager?.needShowPopup(actType) ?? false;
   }
 
+  /// Fetches remote version supplements and merges them into versionHistory.
   Future<void> fetchRemoteVersionSupplements() async {
     _isLoadingVersionSupplements = true;
     notifyListeners();

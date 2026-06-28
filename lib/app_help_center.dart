@@ -1,3 +1,5 @@
+/// A Flutter help center kit for announcements, version history, FAQ,
+/// support links, feedback collection, and review prompts.
 library app_help_center;
 
 export 'src/app_help_center_config.dart';

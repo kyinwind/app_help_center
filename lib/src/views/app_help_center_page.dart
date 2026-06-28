@@ -10,7 +10,9 @@ import '../models/version_history_item.dart';
 import 'help_feedback_page.dart';
 import 'review_prompt_dialog.dart';
 
+/// Complete help center screen for announcements, versions, FAQ, and support.
 class AppHelpCenterPage extends StatefulWidget {
+  /// Creates a help center page from config.
   const AppHelpCenterPage({
     super.key,
     required this.config,
@@ -19,9 +21,16 @@ class AppHelpCenterPage extends StatefulWidget {
     this.subtitle,
   });
 
+  /// Configuration used to build and load help center content.
   final AppHelpCenterConfig config;
+
+  /// Optional external controller for badges or shared state.
   final AppHelpCenterController? controller;
+
+  /// Optional header title override.
   final String? title;
+
+  /// Optional header subtitle override.
   final String? subtitle;
 
   @override
@@ -760,6 +769,7 @@ class _FaqSection extends StatelessWidget {
     required this.l10n,
   });
 
+  /// Configuration used to build and load help center content.
   final AppHelpCenterConfig config;
   final AppHelpCenterLocalizations l10n;
 

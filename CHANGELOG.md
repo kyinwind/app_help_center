@@ -1,3 +1,10 @@
+## 0.2.5
+
+- Fixed built-in Chinese localization strings for the help center UI.
+- Documented the internationalization boundary between the plugin and host apps.
+- Clarified that `copyOverrides` is an advanced escape hatch, not a full translation table.
+- Added API responsibility documentation for plugin-owned copy and host-owned product content.
+
 ## 0.2.4
 
 - Displayed announcement published dates in help center announcement cards.

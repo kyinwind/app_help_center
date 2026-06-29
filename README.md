@@ -20,15 +20,15 @@ pure Flutter/Dart UI and models.
 - Discord webhook support with multipart image upload.
 - Review prompt manager with dual click/day thresholds, four-button dialog, and persistent silent state.
 - Quick links for URLs, feedback, rating, and support.
-- Built-in Chinese and English copy.
-- Caller copy overrides.
+- Built-in Chinese and English copy for generic help center UI.
+- Advanced caller copy overrides for product-specific wording tweaks.
 - Light and dark theme support through Flutter `ThemeData`.
 
 ## Install
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.3
+  app_help_center: ^0.2.5
 ```
 
 ## Basic Usage
@@ -374,6 +374,76 @@ The JSON format is compatible with SwiftHelpCenter:
 
 `id` can match the local version item `id`, `versionName`, or a normalized
 version name without the leading `v`.
+
+## Internationalization and API Responsibilities
+
+`app_help_center` has built-in English and Chinese copy for the generic help
+center UI. The plugin chooses copy from `AppHelpCenterConfig.locale`; if `locale`
+is omitted, it falls back to `Localizations.localeOf(context)`.
+
+```dart
+AppHelpCenterPage(
+  config: AppHelpCenterConfig(
+    appName: 'Demo App',
+    locale: Localizations.localeOf(context),
+    announcements: [...],
+    versionHistory: [...],
+    faqItems: [...],
+    supportUrl: Uri.parse('https://example.com/support'),
+    feedback: HelpFeedbackConfig(email: 'feedback@example.com'),
+  ),
+);
+```
+
+### What the plugin owns
+
+The plugin owns and localizes generic help-center UI copy, including:
+
+- Page title and subtitle.
+- Section names: announcements, quick links, version history, FAQ.
+- Badges, counters, empty states, loading states, and expand/collapse actions.
+- Built-in quick link labels for feedback, rating, and support.
+- Feedback form labels, hints, validation, success/failure messages, screenshots,
+  and character-count copy.
+- Review prompt copy.
+
+Host apps normally should not duplicate these strings in their own app-level
+localization files.
+
+### What the host app owns
+
+The host app owns product-specific content and behavior, including:
+
+- `appName`.
+- Local or remote announcements.
+- Version history records and remote version supplement URLs.
+- FAQ question/answer content.
+- Custom quick links.
+- Support/rating URLs or callbacks.
+- Feedback submission channels and webhook content builders.
+- App-specific storage keys.
+- Review prompt thresholds and callbacks.
+
+These strings belong to the host app because they describe the host product, not
+the generic help center component.
+
+### Copy overrides
+
+`copyOverrides` remains available as an advanced escape hatch:
+
+```dart
+AppHelpCenterConfig(
+  appName: 'Demo App',
+  locale: Localizations.localeOf(context),
+  copyOverrides: {
+    'feedback': 'Contact Us',
+  },
+);
+```
+
+Use `copyOverrides` only to adjust a few built-in plugin labels. Do not use it
+as a full translation table. If the generic built-in wording is wrong or missing
+for a locale, fix it in `AppHelpCenterLocalizations` so every host app benefits.
 
 ## Platform Notes
 

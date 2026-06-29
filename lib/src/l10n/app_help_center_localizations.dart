@@ -1,6 +1,11 @@
 import 'package:flutter/widgets.dart';
 
 /// Lightweight localization helper used by the built-in help center UI.
+///
+/// The plugin owns generic help-center copy such as section titles, feedback
+/// form labels, review prompts, and empty/loading states. Host apps should only
+/// pass product-specific content, for example announcements, FAQs, version
+/// history, support links, and feedback channels.
 class AppHelpCenterLocalizations {
   /// Creates localized copy with optional per-key overrides.
   const AppHelpCenterLocalizations({
@@ -11,7 +16,10 @@ class AppHelpCenterLocalizations {
   /// Locale used to choose built-in copy and format dates.
   final Locale locale;
 
-  /// Per-key text overrides applied before built-in strings.
+  /// Advanced per-key text overrides for built-in plugin copy.
+  ///
+  /// Most host apps should leave this empty. Use it only when the default
+  /// plugin wording needs to be customized for a product.
   final Map<String, String> overrides;
 
   /// Creates localizations from a BuildContext.
@@ -107,15 +115,15 @@ class AppHelpCenterLocalizations {
 
   static const _chinese = {
     'title': '帮助中心',
-    'subtitle': '公告、版本更新、常见问题和技术支持。',
+    'subtitle': '公告、产品更新、常见问题和技术支持。',
     'announcements': '公告',
-    'quickLinks': '快速入口',
+    'quickLinks': '快捷入口',
     'versionHistory': '版本历史',
     'faq': '常见问题',
-    'feedback': '反馈问题',
+    'feedback': '发送反馈',
     'rating': '给应用评分',
     'support': '打开技术支持',
-    'markAllRead': '全部已读',
+    'markAllRead': '全部标为已读',
     'new': '新',
     'pinned': '置顶',
     'viewDetails': '查看详情',
@@ -134,9 +142,9 @@ class AppHelpCenterLocalizations {
     'versionCount': '共 {value} 个版本',
     'unreadVersionCount': '{value} 个版本未读',
     'loading': '加载中...',
-    'feedbackTitle': '反馈问题',
+    'feedbackTitle': '发送反馈',
     'feedbackContent': '反馈内容',
-    'feedbackContentHint': '告诉我们遇到了什么问题，或你期待怎样改进。',
+    'feedbackContentHint': '请描述你遇到的问题，或希望如何改进。',
     'feedbackContact': '联系方式',
     'feedbackContactHint': '邮箱或其他联系方式（可选）',
     'feedbackChannels': '反馈渠道',
@@ -156,8 +164,8 @@ class AppHelpCenterLocalizations {
     'feedbackCharCount': '{value} / 1700',
     'screenshotAdd': '添加截图',
     'screenshotMax': '最多 5 张截图',
-    'reviewPrompt.title': '觉得这个应用不错？',
-    'reviewPrompt.request': '在 App Store 给个评分对我们帮助很大，感谢你的支持！',
+    'reviewPrompt.title': '觉得这个应用不错吗？',
+    'reviewPrompt.request': '花几秒给个评分，会对我们很有帮助。感谢你的支持！',
     'reviewPrompt.never': '不再提醒',
     'reviewPrompt.holdOn': '稍后再说',
     'reviewPrompt.settings': '去设置',

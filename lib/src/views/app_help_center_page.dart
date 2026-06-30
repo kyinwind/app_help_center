@@ -150,7 +150,7 @@ class _AppHelpCenterPageState extends State<AppHelpCenterPage> {
                         });
                       },
                     ),
-                    _FaqSection(config: widget.config, l10n: l10n),
+                    _FaqSection(controller: _controller, l10n: l10n),
                   ],
                 ),
               ),
@@ -765,17 +765,17 @@ class _VersionHistoryCard extends StatelessWidget {
 
 class _FaqSection extends StatelessWidget {
   const _FaqSection({
-    required this.config,
+    required this.controller,
     required this.l10n,
   });
 
-  /// Configuration used to build and load help center content.
-  final AppHelpCenterConfig config;
+  final AppHelpCenterController controller;
   final AppHelpCenterLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    if (config.faqItems.isEmpty) {
+    final faqItems = controller.faqItems;
+    if (faqItems.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -785,7 +785,7 @@ class _FaqSection extends StatelessWidget {
         elevation: 0,
         child: Column(
           children: [
-            for (final entry in config.faqItems.asMap().entries) ...[
+            for (final entry in faqItems.asMap().entries) ...[
               ExpansionTile(
                 title: Text(entry.value.question),
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -796,8 +796,7 @@ class _FaqSection extends StatelessWidget {
                   ),
                 ],
               ),
-              if (entry.key < config.faqItems.length - 1)
-                const Divider(height: 1),
+              if (entry.key < faqItems.length - 1) const Divider(height: 1),
             ],
           ],
         ),

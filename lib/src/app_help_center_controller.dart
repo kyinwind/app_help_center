@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 
 import 'app_help_center_config.dart';
 import 'models/help_announcement.dart';
+import 'models/help_faq_item.dart';
 import 'models/help_quick_link.dart';
 import 'models/review_prompt.dart';
 import 'models/version_history_item.dart';
 import 'services/announcement_service.dart';
 import 'services/app_help_center_storage.dart';
+import 'services/faq_service.dart';
 import 'services/feedback_service.dart';
 import 'services/help_link_launcher.dart';
 import 'services/version_supplement_service.dart';
@@ -22,6 +24,7 @@ class AppHelpCenterController extends ChangeNotifier {
     AppHelpCenterStorage? storage,
     AnnouncementService? announcementService,
     VersionSupplementService? versionSupplementService,
+    FaqService? faqService,
     FeedbackService? feedbackService,
     HelpLinkLauncher? linkLauncher,
     ReviewPromptManager? reviewPromptManager,
@@ -30,12 +33,14 @@ class AppHelpCenterController extends ChangeNotifier {
             announcementService ?? const AnnouncementService(),
         _versionSupplementService =
             versionSupplementService ?? const VersionSupplementService(),
+        _faqService = faqService ?? const FaqService(),
         _feedbackService = feedbackService ?? const FeedbackService(),
         _linkLauncher = linkLauncher ?? const HelpLinkLauncher(),
         _reviewPromptManager =
             reviewPromptManager ?? _createReviewPromptManager(config) {
     _versionHistory = _sortVersions(config.versionHistory);
     _localAnnouncements = _sortAnnouncements(config.announcements);
+    _localFaqItems = config.faqItems;
   }
 
   /// Configuration used by this controller.
@@ -45,6 +50,7 @@ class AppHelpCenterController extends ChangeNotifier {
   final AppHelpCenterStorage storage;
   final AnnouncementService _announcementService;
   final VersionSupplementService _versionSupplementService;
+  final FaqService _faqService;
   final FeedbackService _feedbackService;
   final HelpLinkLauncher _linkLauncher;
   final ReviewPromptManager? _reviewPromptManager;
@@ -70,6 +76,8 @@ class AppHelpCenterController extends ChangeNotifier {
   List<VersionHistoryItem> _versionHistory = const [];
   List<HelpAnnouncement> _localAnnouncements = const [];
   List<HelpAnnouncement> _remoteAnnouncements = const [];
+  List<HelpFaqItem> _localFaqItems = const [];
+  List<HelpFaqItem> _remoteFaqItems = const [];
 
   /// Whether the controller is loading initial or remote data.
   bool get isLoading => _isLoading;
@@ -93,6 +101,11 @@ class AppHelpCenterController extends ChangeNotifier {
       for (final item in _remoteAnnouncements) item.id: item,
     };
     return _sortAnnouncements(byId.values.where((item) => !item.isExpired));
+  }
+
+  /// FAQ items from local config and remote FAQ JSON.
+  List<HelpFaqItem> get faqItems {
+    return _mergeFaqItems(local: _localFaqItems, remote: _remoteFaqItems);
   }
 
   /// Quick links to show, including generated defaults when enabled.
@@ -157,6 +170,9 @@ class AppHelpCenterController extends ChangeNotifier {
         }
         if (config.remoteVersionSupplementUrl != null) {
           await fetchRemoteVersionSupplements();
+        }
+        if (config.remoteFaqUrl != null) {
+          await fetchRemoteFaqItems();
         }
       }
     } catch (error) {
@@ -335,6 +351,16 @@ class AppHelpCenterController extends ChangeNotifier {
     return _reviewPromptManager?.needShowPopup(actType) ?? false;
   }
 
+  /// Fetches remote FAQ items and merges them into faqItems.
+  Future<void> fetchRemoteFaqItems() async {
+    try {
+      _remoteFaqItems = await _faqService.fetch(config);
+      notifyListeners();
+    } catch (_) {
+      // Remote FAQ items are optional; keep local FAQ items on failure.
+    }
+  }
+
   /// Fetches remote version supplements and merges them into versionHistory.
   Future<void> fetchRemoteVersionSupplements() async {
     _isLoadingVersionSupplements = true;
@@ -378,6 +404,31 @@ class AppHelpCenterController extends ChangeNotifier {
   ) {
     return items.toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+  }
+
+  static List<HelpFaqItem> _mergeFaqItems({
+    required List<HelpFaqItem> local,
+    required List<HelpFaqItem> remote,
+  }) {
+    final byId = <String, HelpFaqItem>{};
+    final order = <String>[];
+
+    for (final item in local) {
+      byId[item.id] = item;
+      order.add(item.id);
+    }
+
+    for (final item in remote) {
+      if (!byId.containsKey(item.id)) {
+        order.add(item.id);
+      }
+      byId[item.id] = item;
+    }
+
+    return [
+      for (final id in order)
+        if (byId[id] != null) byId[id]!
+    ];
   }
 
   static List<VersionHistoryItem> _mergeVersionSupplements({

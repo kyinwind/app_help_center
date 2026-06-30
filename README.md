@@ -15,7 +15,7 @@ pure Flutter/Dart UI and models.
 - Announcement unread state, pinned items, levels, details link, and expiration.
 - Version history with latest-only default view and expand-all behavior.
 - Video links for version history items.
-- FAQ disclosure list.
+- FAQ disclosure list with optional remote JSON loading.
 - Built-in feedback form with email, web form, webhook, custom submit channels, screenshot upload, and character-count display.
 - Discord webhook support with multipart image upload.
 - Review prompt manager with dual click/day thresholds, four-button dialog, and persistent silent state.
@@ -28,7 +28,7 @@ pure Flutter/Dart UI and models.
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.5
+  app_help_center: ^0.2.6
 ```
 
 ## Basic Usage
@@ -73,6 +73,7 @@ final config = AppHelpCenterConfig(
   remoteVersionSupplementUrl: Uri.parse(
     'https://example.com/version-supplements.json',
   ),
+  remoteFaqUrl: Uri.parse('https://example.com/faq.json'),
   faqItems: [
     HelpFaqItem(
       question: 'How do I get started?',
@@ -292,6 +293,83 @@ HelpFeedbackConfig(
 
 The feedback text field shows a live character count (up to 1700 characters),
 mirroring the behavior of SwiftHelpCenter.
+
+
+## Remote FAQ Items
+
+Use `faqItems` for bundled FAQ content and `remoteFaqUrl` for optional remote
+updates after the app ships. Remote loading is best-effort: when the device is
+offline, the server is unavailable, or the JSON cannot be parsed, the help
+center keeps showing the local FAQ items and does not surface an error.
+
+```dart
+AppHelpCenterConfig(
+  appName: 'Demo App',
+  faqItems: [
+    HelpFaqItem(
+      id: 'contact',
+      question: 'How do I contact support?',
+      answer: 'Use the support link in the help center.',
+    ),
+  ],
+  remoteFaqUrl: Uri.parse('https://example.com/faq.json'),
+);
+```
+
+The default parser accepts either a JSON array:
+
+```json
+[
+  {
+    "id": "contact",
+    "question": "How do I contact support?",
+    "answer": "Use the support link in the help center."
+  }
+]
+```
+
+Or an object with a `faqItems`, `faq`, or `items` array:
+
+```json
+{
+  "faqItems": [
+    {
+      "id": "contact",
+      "question": "How do I contact support?",
+      "answer": "Use the support link in the help center."
+    }
+  ]
+}
+```
+
+Each item supports `id`, `question`, and `answer`. The parser also accepts
+`title` as an alias for `question`, and `content` as an alias for `answer`.
+When `id` is omitted, the question text is used as the identifier.
+
+Remote FAQ items are merged with local FAQ items by `id`: a remote item with the
+same `id` replaces the local item, while new remote items are appended after the
+local list. This lets you ship reliable fallback content and update selected
+answers remotely.
+
+Use `remoteFaqParser` when your endpoint has a custom schema:
+
+```dart
+AppHelpCenterConfig(
+  appName: 'Demo App',
+  remoteFaqUrl: Uri.parse('https://example.com/help-center-faq.json'),
+  remoteFaqParser: (decodedJson) {
+    final items = decodedJson as List<dynamic>;
+    return items.map((item) {
+      final map = item as Map<String, dynamic>;
+      return HelpFaqItem(
+        id: map['slug'] as String?,
+        question: map['q'] as String? ?? '',
+        answer: map['a'] as String? ?? '',
+      );
+    }).toList();
+  },
+);
+```
 
 ## Review Prompt
 

@@ -17,6 +17,11 @@ typedef VersionSupplementRemoteParser = List<VersionHistorySupplement> Function(
   Object decodedJson,
 );
 
+/// Parses a remote FAQ response into help center FAQ items.
+typedef FaqRemoteParser = List<HelpFaqItem> Function(
+  Object decodedJson,
+);
+
 /// Configuration for an AppHelpCenterPage and its controller.
 class AppHelpCenterConfig {
   /// Creates a help center configuration.
@@ -30,6 +35,8 @@ class AppHelpCenterConfig {
     this.remoteVersionSupplementParser,
     this.quickLinks = const [],
     this.faqItems = const [],
+    this.remoteFaqUrl,
+    this.remoteFaqParser,
     this.includeDefaultQuickLinks = true,
     this.supportUrl,
     this.ratingUrl,
@@ -73,6 +80,12 @@ class AppHelpCenterConfig {
 
   /// Frequently asked questions shown in the FAQ section.
   final List<HelpFaqItem> faqItems;
+
+  /// Optional URL for fetching remote FAQ items.
+  final Uri? remoteFaqUrl;
+
+  /// Custom parser for remoteFaqUrl responses.
+  final FaqRemoteParser? remoteFaqParser;
 
   /// Whether feedback, rating, and support defaults are generated when configured.
   final bool includeDefaultQuickLinks;

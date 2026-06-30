@@ -1,6 +1,6 @@
 name: app_help_center
 description: A lightweight Flutter help center and user communication kit for app announcements, changelog, FAQ, support, and rating links.
-version: 0.2.5
+version: 0.2.6
 homepage: https://github.com/kyinwind/app_help_center
 repository: https://github.com/kyinwind/app_help_center
 issue_tracker: https://github.com/kyinwind/app_help_center/issues

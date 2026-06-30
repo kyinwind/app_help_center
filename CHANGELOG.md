@@ -1,3 +1,9 @@
+## 0.2.6
+
+- Added remote FAQ JSON loading through `AppHelpCenterConfig.remoteFaqUrl`.
+- Added `AppHelpCenterConfig.remoteFaqParser` for custom remote FAQ JSON schemas.
+- Documented remote FAQ fallback and merge behavior: local FAQ items stay available when the network fails, matching IDs are updated, and new remote items are appended.
+
 ## 0.2.5
 
 - Fixed built-in Chinese localization strings for the help center UI.

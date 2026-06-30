@@ -102,12 +102,12 @@ final _config = AppHelpCenterConfig(
     ),
   ],
   faqItems: [
-    HelpFaqItem(
+    const HelpFaqItem(
       question: 'How do I get started?',
       answer:
           'Import app_help_center, create an AppHelpCenterConfig, then show AppHelpCenterPage.',
     ),
-    HelpFaqItem(
+    const HelpFaqItem(
       question: 'Which remote announcement format is supported?',
       answer:
           'Use a SwiftHelpCenter-style JSON array or wrap the array in an announcements field.',

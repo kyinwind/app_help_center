@@ -13,6 +13,7 @@ export 'src/models/help_video_link.dart';
 export 'src/models/review_prompt.dart';
 export 'src/models/version_history_item.dart';
 export 'src/services/app_help_center_storage.dart';
+export 'src/services/faq_service.dart';
 export 'src/views/app_help_center_page.dart';
 export 'src/views/help_feedback_page.dart';
 export 'src/views/review_prompt_dialog.dart';

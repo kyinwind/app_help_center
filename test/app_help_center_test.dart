@@ -277,6 +277,89 @@ void main() {
     expect(find.text('v1.0.0'), findsOneWidget);
   });
 
+  test('parses remote FAQ JSON formats', () {
+    final arrayItems = FaqService.parseFaqItems(jsonDecode('''
+[
+  {"id":"contact","question":"How do I contact support?","answer":"Use support."}
+]
+'''));
+    final wrappedItems = FaqService.parseFaqItems(jsonDecode('''
+{
+  "faqItems": [
+    {"id":"billing","question":"How does billing work?","answer":"Monthly."}
+  ]
+}
+'''));
+
+    expect(arrayItems.single.id, 'contact');
+    expect(wrappedItems.single.question, 'How does billing work?');
+  });
+
+  test('remote FAQ items merge with local items', () async {
+    SharedPreferences.setMockInitialValues({});
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        remoteFaqUrl: Uri.parse('https://example.com/faq.json'),
+        faqItems: [
+          const HelpFaqItem(
+            id: 'contact',
+            question: 'Old contact question',
+            answer: 'Old answer',
+          ),
+          const HelpFaqItem(
+            id: 'local',
+            question: 'Local only',
+            answer: 'Keep me',
+          ),
+        ],
+      ),
+      faqService: const _FakeFaqService([
+        HelpFaqItem(
+          id: 'contact',
+          question: 'New contact question',
+          answer: 'New answer',
+        ),
+        HelpFaqItem(
+          id: 'remote',
+          question: 'Remote only',
+          answer: 'Add me',
+        ),
+      ]),
+    );
+
+    await controller.load();
+
+    expect(controller.faqItems.map((item) => item.id), [
+      'contact',
+      'local',
+      'remote',
+    ]);
+    expect(controller.faqItems.first.question, 'New contact question');
+  });
+
+  test('remote FAQ failures keep local FAQ items without load error', () async {
+    SharedPreferences.setMockInitialValues({});
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        remoteFaqUrl: Uri.parse('https://example.com/faq.json'),
+        faqItems: [
+          const HelpFaqItem(
+            id: 'local',
+            question: 'Local question',
+            answer: 'Local answer',
+          ),
+        ],
+      ),
+      faqService: const _FailingFaqService(),
+    );
+
+    await controller.load();
+
+    expect(controller.lastError, isNull);
+    expect(controller.faqItems.single.id, 'local');
+  });
   test('support actions record review prompt activity', () async {
     SharedPreferences.setMockInitialValues({});
     final controller = AppHelpCenterController(
@@ -305,5 +388,25 @@ class _FakeVersionSupplementService extends VersionSupplementService {
   Future<List<VersionHistorySupplement>> fetch(
       AppHelpCenterConfig config) async {
     return supplements;
+  }
+}
+
+class _FakeFaqService extends FaqService {
+  const _FakeFaqService(this.items);
+
+  final List<HelpFaqItem> items;
+
+  @override
+  Future<List<HelpFaqItem>> fetch(AppHelpCenterConfig config) async {
+    return items;
+  }
+}
+
+class _FailingFaqService extends FaqService {
+  const _FailingFaqService();
+
+  @override
+  Future<List<HelpFaqItem>> fetch(AppHelpCenterConfig config) async {
+    throw StateError('offline');
   }
 }

@@ -1,3 +1,10 @@
+## 0.2.7
+
+- Broadened `http`, `http_parser`, and `shared_preferences` constraints while
+  preserving the APIs used by the package.
+- Restored compatibility with Flutter 3.22 and platform forks by replacing
+  `Color.withValues` with `Color.withOpacity`.
+
 ## 0.2.6
 
 - Added remote FAQ JSON loading through `AppHelpCenterConfig.remoteFaqUrl`.

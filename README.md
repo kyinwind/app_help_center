@@ -28,8 +28,17 @@ pure Flutter/Dart UI and models.
 
 ```yaml
 dependencies:
-  app_help_center: ^0.2.6
+  app_help_center: ^0.2.7
 ```
+
+### Flutter SDK compatibility
+
+Version 0.2.7 broadens dependency compatibility for Flutter 3.22 and platform
+forks such as Flutter OHOS. It supports `http >=0.13.5 <2.0.0`,
+`http_parser >=4.0.2 <5.0.0`, and
+`shared_preferences >=2.2.0 <3.0.0`. The package only relies on APIs shared by
+these version ranges, so applications can keep the versions pinned by their
+Flutter SDK without dependency overrides solely for `app_help_center`.
 
 ## Basic Usage
 

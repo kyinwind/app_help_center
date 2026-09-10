@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.8
 
 - Added SwiftHelpCenter-compatible local and remote training videos.
 - Added a responsive, expandable video section with Chinese and English copy.

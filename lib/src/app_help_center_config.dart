@@ -5,6 +5,7 @@ import 'models/help_faq_item.dart';
 import 'models/help_feedback.dart';
 import 'models/help_quick_link.dart';
 import 'models/review_prompt.dart';
+import 'models/training_video.dart';
 import 'models/version_history_item.dart';
 
 /// Parses a remote announcements response into help center announcements.
@@ -37,6 +38,7 @@ class AppHelpCenterConfig {
     this.faqItems = const [],
     this.remoteFaqUrl,
     this.remoteFaqParser,
+    this.trainingVideos,
     this.includeDefaultQuickLinks = true,
     this.supportUrl,
     this.ratingUrl,
@@ -86,6 +88,11 @@ class AppHelpCenterConfig {
 
   /// Custom parser for remoteFaqUrl responses.
   final FaqRemoteParser? remoteFaqParser;
+
+  /// Local and optional remote training-video configuration.
+  ///
+  /// Mirrors SwiftHelpCenter's `SHCTrainingVideoConfiguration` shape.
+  final TrainingVideoConfig? trainingVideos;
 
   /// Whether feedback, rating, and support defaults are generated when configured.
   final bool includeDefaultQuickLinks;

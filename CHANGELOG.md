@@ -1,3 +1,12 @@
+## Unreleased
+
+- Added SwiftHelpCenter-compatible local and remote training videos.
+- Added a responsive, expandable video section with Chinese and English copy.
+- Matched the SwiftHelpCenter section order and training-video configuration shape.
+- Added per-source loading/error state, parallel remote refresh, retry controls,
+  request-generation isolation, and last-successful-snapshot fallback.
+- Added `showAppHelpCenter` and `AppHelpCenterButton` standard entry APIs.
+
 ## 0.2.7
 
 - Broadened `http`, `http_parser`, and `shared_preferences` constraints while

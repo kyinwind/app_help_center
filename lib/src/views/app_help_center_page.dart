@@ -6,6 +6,7 @@ import '../app_help_center_controller.dart';
 import '../l10n/app_help_center_localizations.dart';
 import '../models/help_announcement.dart';
 import '../models/help_quick_link.dart';
+import '../models/training_video.dart';
 import '../models/version_history_item.dart';
 import 'help_feedback_page.dart';
 import 'review_prompt_dialog.dart';
@@ -108,7 +109,10 @@ class _AppHelpCenterPageState extends State<AppHelpCenterPage> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => _controller.load(refreshRemote: true),
+          onRefresh: () => _controller.load(
+            refreshRemote: true,
+            forceRemoteRefresh: true,
+          ),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -140,6 +144,10 @@ class _AppHelpCenterPageState extends State<AppHelpCenterPage> {
                       },
                     ),
                     _QuickLinksSection(controller: _controller, l10n: l10n),
+                    _TrainingVideosSection(
+                      controller: _controller,
+                      l10n: l10n,
+                    ),
                     _VersionHistorySection(
                       controller: _controller,
                       l10n: l10n,
@@ -472,6 +480,164 @@ class _AnnouncementCardState extends State<_AnnouncementCard> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TrainingVideosSection extends StatefulWidget {
+  const _TrainingVideosSection({
+    required this.controller,
+    required this.l10n,
+  });
+
+  final AppHelpCenterController controller;
+  final AppHelpCenterLocalizations l10n;
+
+  @override
+  State<_TrainingVideosSection> createState() => _TrainingVideosSectionState();
+}
+
+class _TrainingVideosSectionState extends State<_TrainingVideosSection> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.controller.trainingVideos;
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return _Section(
+      title: widget.l10n.text('trainingVideos'),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final collapsedCount = _collapsedItemCount(
+            context,
+            items,
+            constraints.maxWidth,
+          );
+          final hasOverflow = collapsedCount < items.length;
+          final visible = _expanded
+              ? items
+              : items.take(collapsedCount).toList(growable: false);
+          final theme = Theme.of(context);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!_expanded) ...[
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.ondemand_video_outlined,
+                            color: theme.colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final item in visible)
+                              _TrainingVideoChip(
+                                item: item,
+                                controller: widget.controller,
+                                hint: widget.l10n.text('openTrainingVideoHint'),
+                              ),
+                            if (!_expanded && hasOverflow)
+                              TextButton.icon(
+                                onPressed: () =>
+                                    setState(() => _expanded = true),
+                                icon: const Icon(Icons.expand_more, size: 18),
+                                label: Text(widget.l10n.format(
+                                  'viewAllTrainingVideos',
+                                  items.length,
+                                )),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_expanded && hasOverflow)
+                TextButton.icon(
+                  onPressed: () => setState(() => _expanded = false),
+                  icon: const Icon(Icons.expand_less),
+                  label: Text(widget.l10n.text('collapseTrainingVideos')),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  int _collapsedItemCount(
+    BuildContext context,
+    List<TrainingVideo> items,
+    double width,
+  ) {
+    // Reserve room for the leading icon and the localized expand action.
+    final available = (width - 190).clamp(80.0, width);
+    final style = Theme.of(context).textTheme.labelLarge;
+    var used = 0.0;
+    var count = 0;
+    for (final item in items) {
+      final painter = TextPainter(
+        text: TextSpan(text: item.title, style: style),
+        textDirection: Directionality.of(context),
+        maxLines: 1,
+      )..layout(maxWidth: available);
+      final itemWidth = (painter.width + 32).clamp(72.0, available);
+      final next = itemWidth + (count == 0 ? 0 : 8);
+      if (count > 0 && used + next > available) break;
+      used += next;
+      count++;
+    }
+    return count.clamp(1, items.length);
+  }
+}
+
+class _TrainingVideoChip extends StatelessWidget {
+  const _TrainingVideoChip({
+    required this.item,
+    required this.controller,
+    required this.hint,
+  });
+
+  final TrainingVideo item;
+  final AppHelpCenterController controller;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: item.title,
+      hint: hint,
+      child: ActionChip(
+        avatar: const Icon(Icons.play_arrow_rounded, size: 18),
+        label: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        onPressed: () => controller.openUrl(item.url),
       ),
     );
   }

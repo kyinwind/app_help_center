@@ -1,0 +1,12 @@
+[
+  {
+    "id": "getting-started",
+    "title": "Getting started",
+    "url": "https://example.com/training/getting-started"
+  },
+  {
+    "id": "advanced-workflow",
+    "title": "Advanced workflow",
+    "url": "https://example.com/training/advanced-workflow"
+  }
+]

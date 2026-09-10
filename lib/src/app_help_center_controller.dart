@@ -5,12 +5,14 @@ import 'models/help_announcement.dart';
 import 'models/help_faq_item.dart';
 import 'models/help_quick_link.dart';
 import 'models/review_prompt.dart';
+import 'models/training_video.dart';
 import 'models/version_history_item.dart';
 import 'services/announcement_service.dart';
 import 'services/app_help_center_storage.dart';
 import 'services/faq_service.dart';
 import 'services/feedback_service.dart';
 import 'services/help_link_launcher.dart';
+import 'services/training_video_service.dart';
 import 'services/version_supplement_service.dart';
 
 /// State controller for AppHelpCenterPage.
@@ -25,6 +27,7 @@ class AppHelpCenterController extends ChangeNotifier {
     AnnouncementService? announcementService,
     VersionSupplementService? versionSupplementService,
     FaqService? faqService,
+    TrainingVideoService? trainingVideoService,
     FeedbackService? feedbackService,
     HelpLinkLauncher? linkLauncher,
     ReviewPromptManager? reviewPromptManager,
@@ -34,6 +37,8 @@ class AppHelpCenterController extends ChangeNotifier {
         _versionSupplementService =
             versionSupplementService ?? const VersionSupplementService(),
         _faqService = faqService ?? const FaqService(),
+        _trainingVideoService =
+            trainingVideoService ?? const TrainingVideoService(),
         _feedbackService = feedbackService ?? const FeedbackService(),
         _linkLauncher = linkLauncher ?? const HelpLinkLauncher(),
         _reviewPromptManager =
@@ -41,6 +46,8 @@ class AppHelpCenterController extends ChangeNotifier {
     _versionHistory = _sortVersions(config.versionHistory);
     _localAnnouncements = _sortAnnouncements(config.announcements);
     _localFaqItems = config.faqItems;
+    _localTrainingVideos =
+        _validTrainingVideos(config.trainingVideos?.items ?? const []);
   }
 
   /// Configuration used by this controller.
@@ -51,6 +58,7 @@ class AppHelpCenterController extends ChangeNotifier {
   final AnnouncementService _announcementService;
   final VersionSupplementService _versionSupplementService;
   final FaqService _faqService;
+  final TrainingVideoService _trainingVideoService;
   final FeedbackService _feedbackService;
   final HelpLinkLauncher _linkLauncher;
   final ReviewPromptManager? _reviewPromptManager;
@@ -69,7 +77,19 @@ class AppHelpCenterController extends ChangeNotifier {
 
   bool _isLoading = false;
   Object? _lastError;
+  bool _isLoadingRemoteAnnouncements = false;
   bool _isLoadingVersionSupplements = false;
+  bool _isLoadingRemoteFaqItems = false;
+  bool _isLoadingRemoteTrainingVideos = false;
+  bool _didFetchRemoteAnnouncements = false;
+  bool _didFetchRemoteVersionSupplements = false;
+  bool _didFetchRemoteFaqItems = false;
+  bool _didFetchRemoteTrainingVideos = false;
+  int _announcementRequestGeneration = 0;
+  int _versionRequestGeneration = 0;
+  int _faqRequestGeneration = 0;
+  int _trainingVideoRequestGeneration = 0;
+  final Map<String, Object> _remoteErrors = {};
   DateTime _lastViewedVersionPublishedAt =
       DateTime.fromMillisecondsSinceEpoch(0);
   Set<String> _readAnnouncementIds = {};
@@ -78,12 +98,29 @@ class AppHelpCenterController extends ChangeNotifier {
   List<HelpAnnouncement> _remoteAnnouncements = const [];
   List<HelpFaqItem> _localFaqItems = const [];
   List<HelpFaqItem> _remoteFaqItems = const [];
+  List<TrainingVideo> _localTrainingVideos = const [];
+  List<TrainingVideo> _remoteTrainingVideos = const [];
 
   /// Whether the controller is loading initial or remote data.
   bool get isLoading => _isLoading;
 
+  /// Whether remote announcements are loading.
+  bool get isLoadingRemoteAnnouncements => _isLoadingRemoteAnnouncements;
+
   /// Whether remote version supplements are currently loading.
   bool get isLoadingVersionSupplements => _isLoadingVersionSupplements;
+
+  /// Whether remote FAQ items are loading.
+  bool get isLoadingRemoteFaqItems => _isLoadingRemoteFaqItems;
+
+  /// Whether remote training videos are loading.
+  bool get isLoadingRemoteTrainingVideos => _isLoadingRemoteTrainingVideos;
+
+  /// Latest errors by optional remote source.
+  ///
+  /// Failed optional sources keep their last successful snapshots and do not
+  /// prevent other sources from refreshing.
+  Map<String, Object> get remoteErrors => Map.unmodifiable(_remoteErrors);
 
   /// Last error captured while loading remote data, if any.
   Object? get lastError => _lastError;
@@ -107,6 +144,12 @@ class AppHelpCenterController extends ChangeNotifier {
   List<HelpFaqItem> get faqItems {
     return _mergeFaqItems(local: _localFaqItems, remote: _remoteFaqItems);
   }
+
+  /// Valid local videos merged with the latest successful remote snapshot.
+  List<TrainingVideo> get trainingVideos => _mergeTrainingVideos(
+        local: _localTrainingVideos,
+        remote: _remoteTrainingVideos,
+      );
 
   /// Quick links to show, including generated defaults when enabled.
   List<HelpQuickLink> get quickLinks {
@@ -156,8 +199,14 @@ class AppHelpCenterController extends ChangeNotifier {
   /// Whether announcements or versions contain unread content.
   bool get hasUnreadContent => hasUnreadAnnouncements || hasUnreadVersions;
 
-  /// Loads persisted read state and optionally refreshes remote content.
-  Future<void> load({bool refreshRemote = true}) async {
+  /// Loads persisted state and optionally refreshes remote content in parallel.
+  ///
+  /// Set [forceRemoteRefresh] for pull-to-refresh or an explicit retry. Normal
+  /// loads fetch each configured source at most once.
+  Future<void> load({
+    bool refreshRemote = true,
+    bool forceRemoteRefresh = false,
+  }) async {
     _isLoading = true;
     _lastError = null;
     notifyListeners();
@@ -165,15 +214,12 @@ class AppHelpCenterController extends ChangeNotifier {
     try {
       await _loadReadState();
       if (refreshRemote) {
-        if (config.remoteAnnouncementsUrl != null) {
-          _remoteAnnouncements = await _announcementService.fetch(config);
-        }
-        if (config.remoteVersionSupplementUrl != null) {
-          await fetchRemoteVersionSupplements();
-        }
-        if (config.remoteFaqUrl != null) {
-          await fetchRemoteFaqItems();
-        }
+        await Future.wait([
+          fetchRemoteAnnouncements(ifNeeded: !forceRemoteRefresh),
+          fetchRemoteVersionSupplements(ifNeeded: !forceRemoteRefresh),
+          fetchRemoteFaqItems(ifNeeded: !forceRemoteRefresh),
+          fetchRemoteTrainingVideos(ifNeeded: !forceRemoteRefresh),
+        ]);
       }
     } catch (error) {
       _lastError = error;
@@ -351,30 +397,114 @@ class AppHelpCenterController extends ChangeNotifier {
     return _reviewPromptManager?.needShowPopup(actType) ?? false;
   }
 
-  /// Fetches remote FAQ items and merges them into faqItems.
-  Future<void> fetchRemoteFaqItems() async {
+  /// Fetches remote announcements, replacing the last successful snapshot.
+  Future<void> fetchRemoteAnnouncements({bool ifNeeded = false}) async {
+    if (config.remoteAnnouncementsUrl == null ||
+        (ifNeeded && _didFetchRemoteAnnouncements)) {
+      return;
+    }
+    _didFetchRemoteAnnouncements = true;
+    final generation = ++_announcementRequestGeneration;
+    _isLoadingRemoteAnnouncements = true;
+    _remoteErrors.remove('announcements');
+    notifyListeners();
     try {
-      _remoteFaqItems = await _faqService.fetch(config);
-      notifyListeners();
-    } catch (_) {
-      // Remote FAQ items are optional; keep local FAQ items on failure.
+      final remote = await _announcementService.fetch(config);
+      if (generation == _announcementRequestGeneration) {
+        _remoteAnnouncements = remote;
+      }
+    } catch (error) {
+      if (generation == _announcementRequestGeneration) {
+        _remoteErrors['announcements'] = error;
+      }
+    } finally {
+      if (generation == _announcementRequestGeneration) {
+        _isLoadingRemoteAnnouncements = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Fetches remote FAQ items and merges them into faqItems.
+  Future<void> fetchRemoteFaqItems({bool ifNeeded = false}) async {
+    if (config.remoteFaqUrl == null || (ifNeeded && _didFetchRemoteFaqItems)) {
+      return;
+    }
+    _didFetchRemoteFaqItems = true;
+    final generation = ++_faqRequestGeneration;
+    _isLoadingRemoteFaqItems = true;
+    _remoteErrors.remove('faq');
+    notifyListeners();
+    try {
+      final remote = await _faqService.fetch(config);
+      if (generation == _faqRequestGeneration) _remoteFaqItems = remote;
+    } catch (error) {
+      if (generation == _faqRequestGeneration) _remoteErrors['faq'] = error;
+    } finally {
+      if (generation == _faqRequestGeneration) {
+        _isLoadingRemoteFaqItems = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Refreshes the remote snapshot while preserving current content on failure.
+  Future<void> fetchRemoteTrainingVideos({bool ifNeeded = false}) async {
+    if (config.trainingVideos?.remoteUrl == null ||
+        (ifNeeded && _didFetchRemoteTrainingVideos)) {
+      return;
+    }
+    _didFetchRemoteTrainingVideos = true;
+    final generation = ++_trainingVideoRequestGeneration;
+    _isLoadingRemoteTrainingVideos = true;
+    _remoteErrors.remove('trainingVideos');
+    notifyListeners();
+    try {
+      final remote = await _trainingVideoService.fetch(config);
+      if (generation == _trainingVideoRequestGeneration) {
+        _remoteTrainingVideos = _validTrainingVideos(remote);
+      }
+    } catch (error) {
+      if (generation == _trainingVideoRequestGeneration) {
+        _remoteErrors['trainingVideos'] = error;
+      }
+    } finally {
+      if (generation == _trainingVideoRequestGeneration) {
+        _isLoadingRemoteTrainingVideos = false;
+        notifyListeners();
+      }
     }
   }
 
   /// Fetches remote version supplements and merges them into versionHistory.
-  Future<void> fetchRemoteVersionSupplements() async {
+  Future<void> fetchRemoteVersionSupplements({bool ifNeeded = false}) async {
+    if (config.remoteVersionSupplementUrl == null ||
+        (ifNeeded && _didFetchRemoteVersionSupplements)) {
+      return;
+    }
+    _didFetchRemoteVersionSupplements = true;
+    final generation = ++_versionRequestGeneration;
     _isLoadingVersionSupplements = true;
+    _remoteErrors.remove('versionSupplements');
     notifyListeners();
 
     try {
       final supplements = await _versionSupplementService.fetch(config);
-      _versionHistory = _mergeVersionSupplements(
-        local: _versionHistory,
-        supplements: supplements,
-      );
+      if (generation == _versionRequestGeneration) {
+        _versionHistory = _mergeVersionSupplements(
+          local: _sortVersions(config.versionHistory),
+          supplements: supplements,
+        );
+      }
+    } catch (error) {
+      if (generation == _versionRequestGeneration) {
+        _remoteErrors['versionSupplements'] = error;
+      }
     } finally {
-      _isLoadingVersionSupplements = false;
-      notifyListeners();
+      if (generation == _versionRequestGeneration) {
+        _isLoadingVersionSupplements = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -429,6 +559,25 @@ class AppHelpCenterController extends ChangeNotifier {
       for (final id in order)
         if (byId[id] != null) byId[id]!
     ];
+  }
+
+  static List<TrainingVideo> _validTrainingVideos(
+    Iterable<TrainingVideo> items,
+  ) =>
+      items.where((item) => item.isValid).toList(growable: false);
+
+  static List<TrainingVideo> _mergeTrainingVideos({
+    required List<TrainingVideo> local,
+    required List<TrainingVideo> remote,
+  }) {
+    final byId = <String, TrainingVideo>{};
+    final order = <String>[];
+    for (final item in [...local, ...remote]) {
+      if (!item.isValid) continue;
+      if (!byId.containsKey(item.id)) order.add(item.id);
+      byId[item.id] = item;
+    }
+    return [for (final id in order) byId[id]!];
   }
 
   static List<VersionHistoryItem> _mergeVersionSupplements({

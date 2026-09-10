@@ -15,6 +15,7 @@ pure Flutter/Dart UI and models.
 - Announcement unread state, pinned items, levels, details link, and expiration.
 - Version history with latest-only default view and expand-all behavior.
 - Video links for version history items.
+- Local and remotely refreshed training videos with stable-ID merging.
 - FAQ disclosure list with optional remote JSON loading.
 - Built-in feedback form with email, web form, webhook, custom submit channels, screenshot upload, and character-count display.
 - Discord webhook support with multipart image upload.
@@ -83,6 +84,18 @@ final config = AppHelpCenterConfig(
     'https://example.com/version-supplements.json',
   ),
   remoteFaqUrl: Uri.parse('https://example.com/faq.json'),
+  trainingVideos: TrainingVideoConfig(
+    items: [
+      TrainingVideo(
+        id: 'getting-started',
+        title: 'Getting started',
+        url: Uri.parse('https://example.com/training/getting-started'),
+      ),
+    ],
+    remoteUrl: Uri.parse(
+      'https://example.com/training-videos.json',
+    ),
+  ),
   faqItems: [
     HelpFaqItem(
       question: 'How do I get started?',
@@ -303,6 +316,44 @@ HelpFeedbackConfig(
 The feedback text field shows a live character count (up to 1700 characters),
 mirroring the behavior of SwiftHelpCenter.
 
+
+## Training Videos
+
+Use `TrainingVideoConfig.items` for bundled content and `remoteUrl` for an
+optional remote snapshot. The endpoint is a JSON array with `id`, `title`, and
+`url`, matching SwiftHelpCenter. Remote entries override local entries with the
+same stable `id`; new IDs are appended. Failed refreshes keep the previous
+snapshot. Call `controller.fetchRemoteTrainingVideos()` to retry explicitly.
+
+Titles are displayed verbatim. Localize bundled titles in the host app, or use
+a language-specific endpoint for remote content.
+
+```dart
+AppHelpCenterConfig(
+  appName: 'Demo',
+  trainingVideos: TrainingVideoConfig(
+    items: [
+      TrainingVideo(
+        id: 'getting-started',
+        title: 'Getting started',
+        url: Uri.parse('https://example.com/training/getting-started'),
+      ),
+    ],
+    remoteUrl: Uri.parse('https://example.com/training-videos.json'),
+  ),
+)
+```
+
+## Standard Help Center Entry
+
+Use `showAppHelpCenter` when an existing control should open the standard page,
+or use `AppHelpCenterButton` for a ready-made entry with an unread indicator:
+
+```dart
+AppHelpCenterButton(config: config)
+
+await showAppHelpCenter<void>(context, config: config);
+```
 
 ## Remote FAQ Items
 

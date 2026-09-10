@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:app_help_center/app_help_center.dart';
 import 'package:app_help_center/src/services/announcement_service.dart';
@@ -360,6 +361,294 @@ void main() {
     expect(controller.lastError, isNull);
     expect(controller.faqItems.single.id, 'local');
   });
+  test('parses SwiftHelpCenter compatible training video JSON', () {
+    final items = TrainingVideoService.parseTrainingVideos(jsonDecode('''
+[
+  {"id":"start","title":"Getting started","url":"https://example.com/start"},
+  {"id":"bad","title":"Bad URL","url":"file:///tmp/video.mov"},
+  {"title":"Missing id","url":"https://example.com/missing"}
+]
+'''));
+    expect(items, hasLength(1));
+    expect(items.single.id, 'start');
+  });
+
+  test('remote training videos override by id and append in stable order',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/training-videos.json'),
+          items: [
+            TrainingVideo(
+              id: 'start',
+              title: 'Local title',
+              url: Uri.parse('https://example.com/local'),
+            ),
+            TrainingVideo(
+              id: 'local',
+              title: 'Local only',
+              url: Uri.parse('https://example.com/local-only'),
+            ),
+          ],
+        ),
+      ),
+      trainingVideoService: _FakeTrainingVideoService([
+        TrainingVideo(
+          id: 'start',
+          title: 'Remote title',
+          url: Uri.parse('https://example.com/remote'),
+        ),
+        TrainingVideo(
+          id: 'remote',
+          title: 'Remote only',
+          url: Uri.parse('https://example.com/remote-only'),
+        ),
+      ]),
+    );
+    await controller.load();
+    expect(controller.trainingVideos.map((item) => item.id),
+        ['start', 'local', 'remote']);
+    expect(controller.trainingVideos.first.title, 'Remote title');
+  });
+
+  test('successful empty training snapshot removes remote-only videos',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = _SequenceTrainingVideoService([
+      [
+        TrainingVideo(
+          id: 'remote',
+          title: 'Remote',
+          url: Uri.parse('https://example.com/remote'),
+        ),
+      ],
+      const [],
+    ]);
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/videos.json'),
+        ),
+      ),
+      trainingVideoService: service,
+    );
+
+    await controller.fetchRemoteTrainingVideos();
+    expect(controller.trainingVideos, hasLength(1));
+    await controller.fetchRemoteTrainingVideos();
+    expect(controller.trainingVideos, isEmpty);
+  });
+
+  test('failed training refresh retains snapshot and exposes source error',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = _SequenceTrainingVideoService([
+      [
+        TrainingVideo(
+          id: 'remote',
+          title: 'Remote',
+          url: Uri.parse('https://example.com/remote'),
+        ),
+      ],
+      StateError('offline'),
+      const [],
+    ]);
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/videos.json'),
+        ),
+      ),
+      trainingVideoService: service,
+    );
+
+    await controller.fetchRemoteTrainingVideos();
+    await controller.fetchRemoteTrainingVideos();
+    expect(controller.trainingVideos, hasLength(1));
+    expect(controller.remoteErrors, contains('trainingVideos'));
+    await controller.fetchRemoteTrainingVideos();
+    expect(controller.trainingVideos, isEmpty);
+    expect(controller.remoteErrors, isNot(contains('trainingVideos')));
+  });
+
+  test('latest training request wins and loading state follows its generation',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = _DeferredTrainingVideoService();
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/videos.json'),
+        ),
+      ),
+      trainingVideoService: service,
+    );
+
+    final first = controller.fetchRemoteTrainingVideos();
+    final second = controller.fetchRemoteTrainingVideos();
+    expect(controller.isLoadingRemoteTrainingVideos, isTrue);
+    service.requests[1].complete([
+      TrainingVideo(
+        id: 'new',
+        title: 'New',
+        url: Uri.parse('https://example.com/new'),
+      ),
+    ]);
+    await second;
+    expect(controller.isLoadingRemoteTrainingVideos, isFalse);
+    service.requests[0].complete([
+      TrainingVideo(
+        id: 'old',
+        title: 'Old',
+        url: Uri.parse('https://example.com/old'),
+      ),
+    ]);
+    await first;
+    expect(controller.trainingVideos.single.id, 'new');
+  });
+
+  test('if-needed load fetches training videos only once', () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = _CountingTrainingVideoService();
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/videos.json'),
+        ),
+      ),
+      trainingVideoService: service,
+    );
+    await controller.load();
+    await controller.load();
+    expect(service.fetchCount, 1);
+    await controller.load(forceRemoteRefresh: true);
+    expect(service.fetchCount, 2);
+  });
+
+  testWidgets('shows training videos and expands overflow', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final videos = List.generate(
+      6,
+      (index) => TrainingVideo(
+        id: 'video-$index',
+        title: 'Training video number $index',
+        url: Uri.parse('https://example.com/video-$index'),
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      home: AppHelpCenterPage(
+        config: AppHelpCenterConfig(
+          appName: 'Demo',
+          trainingVideos: TrainingVideoConfig(items: videos),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Training Videos'), findsOneWidget);
+    expect(find.text('View all (6)'), findsOneWidget);
+    expect(find.text('Training video number 5'), findsNothing);
+    await tester.tap(find.text('View all (6)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Training video number 5'), findsOneWidget);
+    expect(find.text('Show less'), findsOneWidget);
+  });
+
+  testWidgets('quick links appear before training videos', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(MaterialApp(
+      home: AppHelpCenterPage(
+        config: AppHelpCenterConfig(
+          appName: 'Demo',
+          quickLinks: [
+            HelpQuickLink.url(
+              title: 'Guide',
+              icon: Icons.book,
+              url: Uri.parse('https://example.com/guide'),
+            ),
+          ],
+          trainingVideos: TrainingVideoConfig(items: [
+            TrainingVideo(
+              id: 'start',
+              title: 'Start',
+              url: Uri.parse('https://example.com/start'),
+            ),
+          ]),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Quick Links')).dy,
+      lessThan(tester.getTopLeft(find.text('Training Videos')).dy),
+    );
+  });
+
+  testWidgets('standard help-center button opens the page', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      home: const Scaffold(
+        body: AppHelpCenterButton(
+          config: AppHelpCenterConfig(appName: 'Demo'),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(TextButton, 'Help Center'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppHelpCenterPage), findsOneWidget);
+    expect(find.text('No version history yet'), findsOneWidget);
+  });
+
+  test('remote sources start in parallel and expose independent loading state',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final gate = Completer<void>();
+    final announcements = _GatedAnnouncementService(gate.future);
+    final versions = _GatedVersionSupplementService(gate.future);
+    final faqs = _GatedFaqService(gate.future);
+    final videos = _GatedTrainingVideoService(gate.future);
+    final controller = AppHelpCenterController(
+      config: AppHelpCenterConfig(
+        appName: 'Demo',
+        remoteAnnouncementsUrl: Uri.parse('https://example.com/a.json'),
+        remoteVersionSupplementUrl: Uri.parse('https://example.com/v.json'),
+        remoteFaqUrl: Uri.parse('https://example.com/f.json'),
+        trainingVideos: TrainingVideoConfig(
+          remoteUrl: Uri.parse('https://example.com/t.json'),
+        ),
+      ),
+      announcementService: announcements,
+      versionSupplementService: versions,
+      faqService: faqs,
+      trainingVideoService: videos,
+    );
+
+    final loading = controller.load();
+    while (!videos.called) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(announcements.called, isTrue);
+    expect(versions.called, isTrue);
+    expect(faqs.called, isTrue);
+    expect(controller.isLoadingRemoteAnnouncements, isTrue);
+    expect(controller.isLoadingVersionSupplements, isTrue);
+    expect(controller.isLoadingRemoteFaqItems, isTrue);
+    expect(controller.isLoadingRemoteTrainingVideos, isTrue);
+    gate.complete();
+    await loading;
+  });
+
   test('support actions record review prompt activity', () async {
     SharedPreferences.setMockInitialValues({});
     final controller = AppHelpCenterController(
@@ -408,5 +697,102 @@ class _FailingFaqService extends FaqService {
   @override
   Future<List<HelpFaqItem>> fetch(AppHelpCenterConfig config) async {
     throw StateError('offline');
+  }
+}
+
+class _FakeTrainingVideoService extends TrainingVideoService {
+  const _FakeTrainingVideoService(this.items);
+
+  final List<TrainingVideo> items;
+
+  @override
+  Future<List<TrainingVideo>> fetch(AppHelpCenterConfig config) async => items;
+}
+
+class _SequenceTrainingVideoService extends TrainingVideoService {
+  _SequenceTrainingVideoService(this.results);
+
+  final List<Object> results;
+  var index = 0;
+
+  @override
+  Future<List<TrainingVideo>> fetch(AppHelpCenterConfig config) async {
+    final result = results[index++];
+    if (result is Error) throw result;
+    return (result as List).cast<TrainingVideo>();
+  }
+}
+
+class _DeferredTrainingVideoService extends TrainingVideoService {
+  final requests = <Completer<List<TrainingVideo>>>[];
+
+  @override
+  Future<List<TrainingVideo>> fetch(AppHelpCenterConfig config) {
+    final completer = Completer<List<TrainingVideo>>();
+    requests.add(completer);
+    return completer.future;
+  }
+}
+
+class _CountingTrainingVideoService extends TrainingVideoService {
+  var fetchCount = 0;
+
+  @override
+  Future<List<TrainingVideo>> fetch(AppHelpCenterConfig config) async {
+    fetchCount++;
+    return const [];
+  }
+}
+
+class _GatedAnnouncementService extends AnnouncementService {
+  _GatedAnnouncementService(this.gate);
+  final Future<void> gate;
+  var called = false;
+
+  @override
+  Future<List<HelpAnnouncement>> fetch(AppHelpCenterConfig config) async {
+    called = true;
+    await gate;
+    return const [];
+  }
+}
+
+class _GatedVersionSupplementService extends VersionSupplementService {
+  _GatedVersionSupplementService(this.gate);
+  final Future<void> gate;
+  var called = false;
+
+  @override
+  Future<List<VersionHistorySupplement>> fetch(
+      AppHelpCenterConfig config) async {
+    called = true;
+    await gate;
+    return const [];
+  }
+}
+
+class _GatedFaqService extends FaqService {
+  _GatedFaqService(this.gate);
+  final Future<void> gate;
+  var called = false;
+
+  @override
+  Future<List<HelpFaqItem>> fetch(AppHelpCenterConfig config) async {
+    called = true;
+    await gate;
+    return const [];
+  }
+}
+
+class _GatedTrainingVideoService extends TrainingVideoService {
+  _GatedTrainingVideoService(this.gate);
+  final Future<void> gate;
+  var called = false;
+
+  @override
+  Future<List<TrainingVideo>> fetch(AppHelpCenterConfig config) async {
+    called = true;
+    await gate;
+    return const [];
   }
 }

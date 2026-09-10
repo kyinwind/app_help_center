@@ -49,6 +49,16 @@ final _config = AppHelpCenterConfig(
   ),
   remoteVersionSupplementUrl:
       Uri.parse('https://example.com/version-supplements.json'),
+  trainingVideos: TrainingVideoConfig(
+    items: [
+      TrainingVideo(
+        id: 'getting-started',
+        title: 'Getting started',
+        url: Uri.parse('https://example.com/training/getting-started'),
+      ),
+    ],
+    remoteUrl: Uri.parse('https://example.com/training-videos.json'),
+  ),
   announcements: [
     HelpAnnouncement(
       id: 'welcome-help-center',

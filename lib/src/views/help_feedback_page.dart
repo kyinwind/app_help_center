@@ -128,6 +128,15 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
                         border: const OutlineInputBorder(),
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    // Persistent hint so users know a missing contact means no
+                    // reply. Mirrors SwiftHelpCenter's FeedbackView.contactHint.
+                    Text(
+                      l10n.text('feedbackContactNote'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
                     if (_feedback.allowChannelSelection &&
                         _feedback.availableChannels.length > 1) ...[
                       const SizedBox(height: 18),
